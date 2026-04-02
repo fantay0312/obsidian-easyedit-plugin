@@ -32,12 +32,18 @@ function createActionButton(
 }
 
 function resolveDiffIfDone(view: EditorView): void {
-  const state = view.state.field(diffStateField);
-  if (!state.active) return;
-  if (hasPendingLineDecisions(state.diffLines, state.lineStatuses)) return;
+  setTimeout(() => {
+    const state = view.state.field(diffStateField);
+    if (!state.active) return;
+    if (hasPendingLineDecisions(state.diffLines, state.lineStatuses)) return;
 
-  const finalText = getFinalText(state.diffLines, state.lineStatuses);
-  dispatchDiffReplacement(view, clearDiffEffect, finalText);
+    const finalText = getFinalText(state.diffLines, state.lineStatuses);
+    view.dispatch({
+      annotations: easyEditTransaction.of(true),
+      effects: clearDiffEffect.of(undefined),
+      changes: { from: state.fromPos, to: state.toPos, insert: finalText },
+    });
+  }, 0);
 }
 
 function dispatchLineDecision(
@@ -45,8 +51,10 @@ function dispatchLineDecision(
   effect: typeof acceptLineEffect | typeof rejectLineEffect,
   lineIndex: number,
 ): void {
-  view.dispatch({ effects: effect.of(lineIndex) });
-  resolveDiffIfDone(view);
+  setTimeout(() => {
+    view.dispatch({ effects: effect.of(lineIndex) });
+    resolveDiffIfDone(view);
+  }, 0);
 }
 
 function dispatchDiffReplacement(
@@ -54,14 +62,17 @@ function dispatchDiffReplacement(
   effect: typeof acceptAllEffect | typeof rejectAllEffect | typeof clearDiffEffect,
   insert: string,
 ): void {
-  const state = view.state.field(diffStateField);
-  if (!state.active) return;
+  // Defer dispatch to avoid CM6 event pipeline conflicts
+  setTimeout(() => {
+    const state = view.state.field(diffStateField);
+    if (!state.active) return;
 
-  view.dispatch({
-    annotations: easyEditTransaction.of(true),
-    effects: effect.of(undefined),
-    changes: { from: state.fromPos, to: state.toPos, insert },
-  });
+    view.dispatch({
+      annotations: easyEditTransaction.of(true),
+      effects: effect.of(undefined),
+      changes: { from: state.fromPos, to: state.toPos, insert },
+    });
+  }, 0);
 }
 
 export function handleDiffWidgetAction(view: EditorView, target: EventTarget | null): boolean {
