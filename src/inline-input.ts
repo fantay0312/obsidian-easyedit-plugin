@@ -177,7 +177,11 @@ const inlineInputField = StateField.define<Tooltip | null>({
         return {
           pos: data.pos,
           above: false,
-          create: (view: EditorView) => createInlineInputDOM(view, data),
+          create: (view: EditorView) => {
+            const result = createInlineInputDOM(view, data);
+            setTimeout(() => result.dom.parentElement?.classList.add('easyedit-glass-tooltip'), 0);
+            return result;
+          },
         };
       }
       if (e.is(hideInlineInputEffect)) return null;

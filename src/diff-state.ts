@@ -8,7 +8,7 @@ export {
   startStreamingEffect, finishStreamingEffect,
   applyDiffEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
-  clearDiffAction,
+  clearDiffAction, acceptLineAction, rejectLineAction,
   diffStateField,
   computeLineDiff, getMergedText, getAcceptedText, getFinalText,
   easyEditTransaction, isEasyEditTransaction,
@@ -20,7 +20,7 @@ class LoadingSpinnerWidget extends WidgetType {
   toDOM(): HTMLElement {
     const span = document.createElement('span');
     span.className = 'easyedit-loading-spinner';
-    span.textContent = ' Generating...';
+    span.textContent = ' 思考中...';
     return span;
   }
 

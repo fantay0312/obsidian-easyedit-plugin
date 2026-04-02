@@ -84,7 +84,11 @@ const toolbarField = StateField.define<Tooltip | null>({
           above: false,
           strictSide: false,
           arrow: false,
-          create: (view: EditorView) => createToolbarDOM(view),
+          create: (view: EditorView) => {
+            const result = createToolbarDOM(view);
+            setTimeout(() => result.dom.parentElement?.classList.add('easyedit-glass-tooltip'), 0);
+            return result;
+          },
         };
       }
     }

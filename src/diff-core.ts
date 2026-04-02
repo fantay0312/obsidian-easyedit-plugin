@@ -5,6 +5,8 @@ export type DiffLineStatus = 'pending' | 'accepted' | 'rejected';
 
 export const easyEditTransaction = Annotation.define<boolean>();
 export const clearDiffAction = Annotation.define<boolean>();
+export const acceptLineAction = Annotation.define<number>();
+export const rejectLineAction = Annotation.define<number>();
 
 // ===== Effects =====
 export const startStreamingEffect = StateEffect.define<{
@@ -45,12 +47,26 @@ const EMPTY_STATE: DiffStateData = {
 export const diffStateField = StateField.define<DiffStateData>({
   create: () => ({ ...EMPTY_STATE }),
   update(state, tr) {
-    // Annotation-based clear -- works reliably from widget event handlers
+    // Annotation-based actions — reliable from widget event handlers
+    // (StateEffect.is() can fail due to identity mismatch in bundles)
     if (tr.annotation(clearDiffAction)) {
       return { ...EMPTY_STATE };
     }
 
     let s = { ...state };
+
+    const acceptIdx = tr.annotation(acceptLineAction);
+    if (acceptIdx !== undefined && s.active) {
+      const statuses = [...s.lineStatuses];
+      statuses[acceptIdx] = 'accepted';
+      s = { ...s, lineStatuses: statuses };
+    }
+    const rejectIdx = tr.annotation(rejectLineAction);
+    if (rejectIdx !== undefined && s.active) {
+      const statuses = [...s.lineStatuses];
+      statuses[rejectIdx] = 'rejected';
+      s = { ...s, lineStatuses: statuses };
+    }
 
     for (const e of tr.effects) {
       if (e.is(startStreamingEffect)) {

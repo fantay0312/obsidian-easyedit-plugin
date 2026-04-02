@@ -15,9 +15,20 @@
  */
 
 /* =============================================
+   GLASS TOOLTIP WRAPPER
+   CM6 wraps tooltip content in .cm-tooltip with its own bg/border.
+   We make it transparent so our inner glassmorphism shows through.
+   ============================================= */
+.easyedit-glass-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* =============================================
    SELECTION TOOLBAR
    ============================================= */
-.cm-tooltip.easyedit-toolbar,
 .easyedit-toolbar {
   display: flex;
   gap: 2px;
@@ -38,7 +49,6 @@
   z-index: 100;
 }
 
-.theme-dark .cm-tooltip.easyedit-toolbar,
 .theme-dark .easyedit-toolbar {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
@@ -92,7 +102,6 @@
 /* =============================================
    INLINE AI INPUT
    ============================================= */
-.cm-tooltip.easyedit-inline-input,
 .easyedit-inline-input {
   width: 420px;
   /* Glass */
@@ -111,7 +120,6 @@
   overflow: hidden;
 }
 
-.theme-dark .cm-tooltip.easyedit-inline-input,
 .theme-dark .easyedit-inline-input {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),

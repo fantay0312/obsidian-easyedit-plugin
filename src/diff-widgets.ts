@@ -1,7 +1,7 @@
 import { EditorView, WidgetType } from '@codemirror/view';
 import {
   diffStateField, clearDiffAction,
-  acceptLineEffect, rejectLineEffect,
+  acceptLineAction, rejectLineAction,
   easyEditTransaction, getAcceptedText, getFinalText, hasPendingLineDecisions,
 } from './diff-core';
 import { DiffLineType } from './types';
@@ -97,7 +97,7 @@ export class LineActionWidget extends WidgetType {
       accept.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ effects: acceptLineEffect.of(idx) });
+        view.dispatch({ annotations: acceptLineAction.of(idx) });
         autoResolve(view);
       });
 
@@ -107,7 +107,7 @@ export class LineActionWidget extends WidgetType {
       reject.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ effects: rejectLineEffect.of(idx) });
+        view.dispatch({ annotations: rejectLineAction.of(idx) });
         autoResolve(view);
       });
 
@@ -120,7 +120,7 @@ export class LineActionWidget extends WidgetType {
       restore.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ effects: rejectLineEffect.of(idx) });
+        view.dispatch({ annotations: rejectLineAction.of(idx) });
         autoResolve(view);
       });
 
@@ -130,7 +130,7 @@ export class LineActionWidget extends WidgetType {
       del.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ effects: acceptLineEffect.of(idx) });
+        view.dispatch({ annotations: acceptLineAction.of(idx) });
         autoResolve(view);
       });
 
