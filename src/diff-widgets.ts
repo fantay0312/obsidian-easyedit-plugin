@@ -11,16 +11,24 @@ function bindWidgetButton(
   view: EditorView,
   onActivate: () => void,
 ): void {
-  button.type = 'button';
-  button.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
-  button.addEventListener('click', (e) => {
+  const activate = (e: Event): void => {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
     view.focus();
+  };
+
+  button.type = 'button';
+  button.addEventListener('mousedown', activate);
+  button.addEventListener('touchend', activate);
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  button.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      activate(e);
+    }
   });
 }
 
