@@ -4,9 +4,13 @@ import { DiffLine, DiffResult } from './types';
 export type DiffLineStatus = 'pending' | 'accepted' | 'rejected';
 
 export const easyEditTransaction = Annotation.define<boolean>();
-export const clearDiffAction = Annotation.define<boolean>();
-export const acceptLineAction = Annotation.define<number>();
-export const rejectLineAction = Annotation.define<number>();
+
+export type DiffAction =
+  | { type: 'clear' }
+  | { type: 'acceptLine'; index: number }
+  | { type: 'rejectLine'; index: number };
+
+export const diffAction = Annotation.define<DiffAction>();
 
 // ===== Effects =====
 export const startStreamingEffect = StateEffect.define<{
@@ -47,26 +51,23 @@ const EMPTY_STATE: DiffStateData = {
 export const diffStateField = StateField.define<DiffStateData>({
   create: () => ({ ...EMPTY_STATE }),
   update(state, tr) {
-    // Annotation-based actions — reliable from widget event handlers
-    // (StateEffect.is() can fail due to identity mismatch in bundles)
-    if (tr.annotation(clearDiffAction)) {
-      return { ...EMPTY_STATE };
+    // Unified annotation-based actions — reliable from widget event handlers
+    const action = tr.annotation(diffAction);
+    if (action) {
+      if (action.type === 'clear') return { ...EMPTY_STATE };
+      if (action.type === 'acceptLine' && state.active) {
+        const statuses = [...state.lineStatuses];
+        statuses[action.index] = 'accepted';
+        return { ...state, lineStatuses: statuses };
+      }
+      if (action.type === 'rejectLine' && state.active) {
+        const statuses = [...state.lineStatuses];
+        statuses[action.index] = 'rejected';
+        return { ...state, lineStatuses: statuses };
+      }
     }
 
     let s = { ...state };
-
-    const acceptIdx = tr.annotation(acceptLineAction);
-    if (acceptIdx !== undefined && s.active) {
-      const statuses = [...s.lineStatuses];
-      statuses[acceptIdx] = 'accepted';
-      s = { ...s, lineStatuses: statuses };
-    }
-    const rejectIdx = tr.annotation(rejectLineAction);
-    if (rejectIdx !== undefined && s.active) {
-      const statuses = [...s.lineStatuses];
-      statuses[rejectIdx] = 'rejected';
-      s = { ...s, lineStatuses: statuses };
-    }
 
     for (const e of tr.effects) {
       if (e.is(startStreamingEffect)) {

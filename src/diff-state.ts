@@ -8,7 +8,7 @@ export {
   startStreamingEffect, finishStreamingEffect,
   applyDiffEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
-  clearDiffAction, acceptLineAction, rejectLineAction,
+  diffAction,
   diffStateField,
   computeLineDiff, getMergedText, getAcceptedText, getFinalText,
   easyEditTransaction, isEasyEditTransaction,

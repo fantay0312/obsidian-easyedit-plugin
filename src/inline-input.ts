@@ -5,7 +5,7 @@ import type EasyEditPlugin from '../main';
 import { streamChat, buildEditMessages, buildGenerateMessages, buildPolishMessages } from './ai-service';
 import {
   diffStateField, startStreamingEffect,
-  applyDiffEffect, clearDiffEffect, clearDiffAction,
+  applyDiffEffect, clearDiffEffect, diffAction,
   computeLineDiff, easyEditTransaction, getMergedText,
   hasActionableDiff, isEasyEditTransaction,
 } from './diff-state';
@@ -221,7 +221,7 @@ const externalEditGuard = ViewPlugin.fromClass(class {
       const currentDiffState = update.view.state.field(diffStateField);
       if (currentDiffState.active || currentDiffState.streaming) {
         update.view.dispatch({
-          annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
+          annotations: [easyEditTransaction.of(true), diffAction.of({ type: 'clear' })],
         });
       }
       new Notice('EasyEdit: stopped due to external edit.');
@@ -274,7 +274,7 @@ async function runAIRequest(
     if (!hasActionableDiff(diff)) {
       // No meaningful changes -- just clear the loading state
       view.dispatch({
-        annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
+        annotations: [easyEditTransaction.of(true), diffAction.of({ type: 'clear' })],
       });
       return;
     }
@@ -300,7 +300,7 @@ async function runAIRequest(
     const currentState = view.state.field(diffStateField);
     if (currentState.active || currentState.streaming) {
       view.dispatch({
-        annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
+        annotations: [easyEditTransaction.of(true), diffAction.of({ type: 'clear' })],
       });
     }
 
