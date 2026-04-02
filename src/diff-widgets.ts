@@ -2,7 +2,7 @@ import { EditorView, WidgetType } from '@codemirror/view';
 import {
   diffStateField, acceptAllEffect, rejectAllEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
-  getAcceptedText, getFinalText,
+  easyEditTransaction, getAcceptedText, getFinalText, hasPendingLineDecisions,
 } from './diff-core';
 import { DiffLineType } from './types';
 
@@ -19,6 +19,7 @@ export class DiffActionBarWidget extends WidgetType {
       const state = view.state.field(diffStateField);
       const acceptedText = getAcceptedText(state.diffLines);
       view.dispatch({
+        annotations: easyEditTransaction.of(true),
         effects: acceptAllEffect.of(undefined),
         changes: { from: state.fromPos, to: state.toPos, insert: acceptedText },
       });
@@ -31,6 +32,7 @@ export class DiffActionBarWidget extends WidgetType {
       e.preventDefault();
       const state = view.state.field(diffStateField);
       view.dispatch({
+        annotations: easyEditTransaction.of(true),
         effects: rejectAllEffect.of(undefined),
         changes: { from: state.fromPos, to: state.toPos, insert: state.originalText },
       });
@@ -59,9 +61,10 @@ export class LineActionWidget extends WidgetType {
       setTimeout(() => {
         const state = view.state.field(diffStateField);
         if (!state.active) return;
-        if (state.lineStatuses.every(s => s !== 'pending')) {
+        if (!hasPendingLineDecisions(state.diffLines, state.lineStatuses)) {
           const finalText = getFinalText(state.diffLines, state.lineStatuses);
           view.dispatch({
+            annotations: easyEditTransaction.of(true),
             effects: clearDiffEffect.of(undefined),
             changes: { from: state.fromPos, to: state.toPos, insert: finalText },
           });

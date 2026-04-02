@@ -1,12 +1,13 @@
-import { StateField, StateEffect, Extension } from '@codemirror/state';
-import { EditorView, showTooltip, Tooltip } from '@codemirror/view';
+import { StateField, StateEffect, type Extension } from '@codemirror/state';
+import { EditorView, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { Notice } from 'obsidian';
 import type EasyEditPlugin from '../main';
 import { streamChat, buildEditMessages, buildGenerateMessages, buildPolishMessages } from './ai-service';
 import {
   diffStateField, startStreamingEffect, appendStreamChunkEffect,
   finishStreamingEffect, applyDiffEffect, clearDiffEffect,
-  computeLineDiff, getMergedText,
+  computeLineDiff, easyEditTransaction, getMergedText,
+  hasActionableDiff, isEasyEditTransaction,
 } from './diff-state';
 
 // ===== Effects =====
@@ -23,6 +24,23 @@ export const hideInlineInputEffect = StateEffect.define<void>();
 
 // ===== Shared context =====
 let pluginRef: EasyEditPlugin | null = null;
+let activeAbortController: AbortController | null = null;
+
+function dispatchEasyEdit(
+  view: EditorView,
+  spec: Parameters<EditorView['dispatch']>[0],
+): void {
+  view.dispatch({
+    ...spec,
+    annotations: easyEditTransaction.of(true),
+  });
+}
+
+export function cancelActiveAIRequest(): void {
+  if (!activeAbortController) return;
+  activeAbortController.abort();
+  activeAbortController = null;
+}
 
 function createInlineInputDOM(
   view: EditorView,
@@ -107,6 +125,7 @@ function createInlineInputDOM(
     view.dispatch({ effects: hideInlineInputEffect.of(undefined) });
     view.focus();
 
+    cancelActiveAIRequest();
     const abortController = new AbortController();
     startAIFlow(
       view, plugin, data.mode, instruction, model,
@@ -159,7 +178,124 @@ const inlineInputField = StateField.define<Tooltip | null>({
   provide: f => showTooltip.from(f),
 });
 
+const externalEditGuard = ViewPlugin.fromClass(class {
+  update(update: ViewUpdate): void {
+    if (!update.docChanged) return;
+
+    const previousDiffState = update.startState.field(diffStateField);
+    if (!previousDiffState.active && !previousDiffState.streaming) return;
+
+    const hasExternalChange = update.transactions.some(transaction => {
+      return transaction.docChanged && !isEasyEditTransaction(transaction);
+    });
+    if (!hasExternalChange) return;
+
+    cancelActiveAIRequest();
+
+    const currentDiffState = update.state.field(diffStateField);
+    if (currentDiffState.active || currentDiffState.streaming) {
+      dispatchEasyEdit(update.view, {
+        effects: clearDiffEffect.of(undefined),
+      });
+    }
+
+    new Notice('EasyEdit stopped because the document changed during AI review.');
+  }
+});
+
 // ===== AI Flow =====
+async function runAIRequest(
+  view: EditorView,
+  plugin: EasyEditPlugin,
+  messages: ReturnType<typeof buildEditMessages>,
+  originalText: string,
+  from: number,
+  to: number,
+  replaceSelection: boolean,
+  abortController: AbortController,
+): Promise<void> {
+  activeAbortController = abortController;
+
+  dispatchEasyEdit(view, {
+    effects: startStreamingEffect.of({ from, to, originalText }),
+    changes: replaceSelection ? { from, to, insert: '' } : undefined,
+  });
+
+  try {
+    let fullText = '';
+    for await (const chunk of streamChat(
+      plugin.settings.apiEndpoint,
+      plugin.settings.apiKey,
+      plugin.settings.lastUsedModel || plugin.settings.defaultModel || 'gpt-4o',
+      messages,
+      abortController.signal,
+    )) {
+      const currentState = view.state.field(diffStateField);
+      if (!currentState.streaming) return;
+
+      fullText += chunk;
+      dispatchEasyEdit(view, {
+        effects: appendStreamChunkEffect.of(chunk),
+        changes: { from: currentState.toPos, insert: chunk },
+      });
+    }
+
+    const streamingState = view.state.field(diffStateField);
+    if (!streamingState.streaming) return;
+
+    dispatchEasyEdit(view, {
+      effects: finishStreamingEffect.of(undefined),
+    });
+
+    const diff = computeLineDiff(originalText, fullText);
+    if (!hasActionableDiff(diff)) {
+      dispatchEasyEdit(view, {
+        effects: clearDiffEffect.of(undefined),
+      });
+      return;
+    }
+
+    const mergedText = getMergedText(diff);
+    const currentState = view.state.field(diffStateField);
+    if (!currentState.fromPos && !currentState.toPos && !currentState.originalText && !currentState.newText) {
+      return;
+    }
+
+    dispatchEasyEdit(view, {
+      effects: applyDiffEffect.of({
+        lines: diff,
+        originalText,
+        newText: fullText,
+      }),
+      changes: {
+        from: currentState.fromPos,
+        to: currentState.toPos,
+        insert: mergedText,
+      },
+    });
+  } catch (err: unknown) {
+    const currentState = view.state.field(diffStateField);
+    if (currentState.active || currentState.streaming) {
+      dispatchEasyEdit(view, {
+        effects: clearDiffEffect.of(undefined),
+        changes: {
+          from: currentState.fromPos,
+          to: currentState.toPos,
+          insert: originalText,
+        },
+      });
+    }
+
+    if (err instanceof Error && err.name !== 'AbortError') {
+      new Notice(`AI Error: ${err.message}`);
+    }
+  } finally {
+    if (activeAbortController === abortController) {
+      activeAbortController = null;
+    }
+  }
+}
+
 async function startAIFlow(
   view: EditorView,
   plugin: EasyEditPlugin,
@@ -177,64 +313,17 @@ async function startAIFlow(
     ? buildEditMessages(instruction, selectedText, contextBefore, contextAfter)
     : buildGenerateMessages(instruction, contextBefore, contextAfter);
 
-  const from = selFrom;
-  const to = mode === 'edit' ? selTo : selTo;
-
-  view.dispatch({
-    effects: startStreamingEffect.of({ from, to, originalText: selectedText }),
-    changes: mode === 'edit' ? { from, to, insert: '' } : undefined,
-  });
-
-  try {
-    let fullText = '';
-    for await (const chunk of streamChat(
-      plugin.settings.apiEndpoint,
-      plugin.settings.apiKey,
-      model,
-      messages,
-      abortController.signal,
-    )) {
-      fullText += chunk;
-      const currentState = view.state.field(diffStateField);
-      view.dispatch({
-        effects: appendStreamChunkEffect.of(chunk),
-        changes: { from: currentState.toPos, insert: chunk },
-      });
-    }
-
-    view.dispatch({ effects: finishStreamingEffect.of(undefined) });
-
-    const diff = computeLineDiff(selectedText, fullText);
-    const mergedText = getMergedText(diff);
-    const currentState = view.state.field(diffStateField);
-
-    view.dispatch({
-      effects: applyDiffEffect.of({
-        lines: diff,
-        originalText: selectedText,
-        newText: fullText,
-      }),
-      changes: {
-        from: currentState.fromPos,
-        to: currentState.toPos,
-        insert: mergedText,
-      },
-    });
-  } catch (err: unknown) {
-    const currentState = view.state.field(diffStateField);
-    view.dispatch({
-      effects: clearDiffEffect.of(undefined),
-      changes: {
-        from: currentState.fromPos,
-        to: currentState.toPos,
-        insert: selectedText,
-      },
-    });
-
-    if (err instanceof Error && err.name !== 'AbortError') {
-      new Notice(`AI Error: ${err.message}`);
-    }
-  }
+  plugin.settings.lastUsedModel = model;
+  await runAIRequest(
+    view,
+    plugin,
+    messages,
+    selectedText,
+    selFrom,
+    selTo,
+    mode === 'edit',
+    abortController,
+  );
 }
 
 // ===== AI Polish (for toolbar button) =====
@@ -255,67 +344,19 @@ export async function startAIPolish(
   ].filter(Boolean);
   const model = models[0] || 'gpt-4o';
 
+  cancelActiveAIRequest();
   const abortController = new AbortController();
-
-  view.dispatch({
-    effects: startStreamingEffect.of({
-      from: sel.from,
-      to: sel.to,
-      originalText: selectedText,
-    }),
-    changes: { from: sel.from, to: sel.to, insert: '' },
-  });
-
-  try {
-    let fullText = '';
-    for await (const chunk of streamChat(
-      plugin.settings.apiEndpoint,
-      plugin.settings.apiKey,
-      model,
-      messages,
-      abortController.signal,
-    )) {
-      fullText += chunk;
-      const currentState = view.state.field(diffStateField);
-      view.dispatch({
-        effects: appendStreamChunkEffect.of(chunk),
-        changes: { from: currentState.toPos, insert: chunk },
-      });
-    }
-
-    view.dispatch({ effects: finishStreamingEffect.of(undefined) });
-
-    const diff = computeLineDiff(selectedText, fullText);
-    const mergedText = getMergedText(diff);
-    const currentState = view.state.field(diffStateField);
-
-    view.dispatch({
-      effects: applyDiffEffect.of({
-        lines: diff,
-        originalText: selectedText,
-        newText: fullText,
-      }),
-      changes: {
-        from: currentState.fromPos,
-        to: currentState.toPos,
-        insert: mergedText,
-      },
-    });
-  } catch (err: unknown) {
-    const currentState = view.state.field(diffStateField);
-    view.dispatch({
-      effects: clearDiffEffect.of(undefined),
-      changes: {
-        from: currentState.fromPos,
-        to: currentState.toPos,
-        insert: selectedText,
-      },
-    });
-
-    if (err instanceof Error && err.name !== 'AbortError') {
-      new Notice(`AI Error: ${err.message}`);
-    }
-  }
+  plugin.settings.lastUsedModel = model;
+  await runAIRequest(
+    view,
+    plugin,
+    messages,
+    selectedText,
+    sel.from,
+    sel.to,
+    true,
+    abortController,
+  );
 }
 
 // ===== Trigger command =====
@@ -350,5 +391,5 @@ export function triggerInlineInput(view: EditorView, plugin: EasyEditPlugin): vo
 // ===== Extension factory =====
 export function inlineInputExtension(plugin: EasyEditPlugin): Extension[] {
   pluginRef = plugin;
-  return [inlineInputField];
+  return [inlineInputField, externalEditGuard];
 }

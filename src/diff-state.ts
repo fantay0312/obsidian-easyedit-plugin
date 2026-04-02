@@ -10,6 +10,8 @@ export {
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
   diffStateField,
   computeLineDiff, getMergedText, getAcceptedText, getFinalText,
+  easyEditTransaction, isEasyEditTransaction,
+  hasActionableDiff, hasPendingLineDecisions,
 } from './diff-core';
 
 // ===== Typing Cursor Widget =====
@@ -47,13 +49,19 @@ const diffDecorations = StateField.define<DecorationSet>({
 
     // Diff decorations with action widgets
     if (state.active && state.diffLines.length > 0) {
-      decorations.push(
-        Decoration.widget({
-          widget: new DiffActionBarWidget(),
-          block: true,
-          side: -1,
-        }).range(state.fromPos)
-      );
+      const hasPendingChanges = state.diffLines.some((line, index) => {
+        return line.type !== 'unchanged' && state.lineStatuses[index] === 'pending';
+      });
+
+      if (hasPendingChanges) {
+        decorations.push(
+          Decoration.widget({
+            widget: new DiffActionBarWidget(),
+            block: true,
+            side: -1,
+          }).range(state.fromPos)
+        );
+      }
 
       let lineNum = doc.lineAt(state.fromPos).number;
       for (let i = 0; i < state.diffLines.length && lineNum <= doc.lines; i++) {

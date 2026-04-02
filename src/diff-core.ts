@@ -1,5 +1,9 @@
-import { StateField, StateEffect } from '@codemirror/state';
+import { Annotation, StateEffect, StateField, Transaction } from '@codemirror/state';
 import { DiffLine, DiffResult } from './types';
+
+export type DiffLineStatus = 'pending' | 'accepted' | 'rejected';
+
+export const easyEditTransaction = Annotation.define<boolean>();
 
 // ===== Effects =====
 export const startStreamingEffect = StateEffect.define<{
@@ -25,7 +29,7 @@ export interface DiffStateData {
   diffLines: DiffLine[];
   fromPos: number;
   toPos: number;
-  lineStatuses: Array<'pending' | 'accepted' | 'rejected'>;
+  lineStatuses: DiffLineStatus[];
 }
 
 const EMPTY_STATE: DiffStateData = {
@@ -66,7 +70,7 @@ export const diffStateField = StateField.define<DiffStateData>({
           diffLines: e.value.lines,
           originalText: e.value.originalText,
           newText: e.value.newText,
-          lineStatuses: e.value.lines.map(() => 'pending' as const),
+          lineStatuses: getInitialLineStatuses(e.value.lines),
         };
       } else if (e.is(acceptAllEffect) || e.is(rejectAllEffect) || e.is(clearDiffEffect)) {
         s = { ...EMPTY_STATE };
@@ -94,9 +98,13 @@ export const diffStateField = StateField.define<DiffStateData>({
 });
 
 // ===== LCS Diff Algorithm =====
+function splitLines(text: string): string[] {
+  return text === '' ? [] : text.split('\n');
+}
+
 export function computeLineDiff(original: string, modified: string): DiffLine[] {
-  const oldLines = original.split('\n');
-  const newLines = modified.split('\n');
+  const oldLines = splitLines(original);
+  const newLines = splitLines(modified);
   const m = oldLines.length;
   const n = newLines.length;
 
@@ -137,9 +145,26 @@ export function getAcceptedText(diffLines: DiffLine[]): string {
   return diffLines.filter(l => l.type !== 'deleted').map(l => l.content).join('\n');
 }
 
+export function getInitialLineStatuses(diffLines: DiffLine[]): DiffLineStatus[] {
+  return diffLines.map(line => line.type === 'unchanged' ? 'accepted' : 'pending');
+}
+
+export function hasPendingLineDecisions(
+  diffLines: DiffLine[],
+  lineStatuses: DiffLineStatus[],
+): boolean {
+  return diffLines.some((line, index) => {
+    return line.type !== 'unchanged' && lineStatuses[index] === 'pending';
+  });
+}
+
+export function hasActionableDiff(diffLines: DiffLine[]): boolean {
+  return diffLines.some(line => line.type !== 'unchanged');
+}
+
 export function getFinalText(
   diffLines: DiffLine[],
-  lineStatuses: Array<'pending' | 'accepted' | 'rejected'>
+  lineStatuses: DiffLineStatus[],
 ): string {
   return diffLines
     .filter((l, i) => {
@@ -150,4 +175,8 @@ export function getFinalText(
     })
     .map(l => l.content)
     .join('\n');
+}
+
+export function isEasyEditTransaction(transaction: Transaction): boolean {
+  return transaction.annotation(easyEditTransaction) === true;
 }
