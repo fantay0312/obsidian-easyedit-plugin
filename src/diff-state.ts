@@ -1,7 +1,7 @@
 import { StateField, Extension, Range } from '@codemirror/state';
 import { EditorView, Decoration, DecorationSet, WidgetType } from '@codemirror/view';
 import { diffStateField } from './diff-core';
-import { DiffActionBarWidget, LineActionWidget, handleDiffWidgetAction } from './diff-widgets';
+import { DiffActionBarWidget, LineActionWidget } from './diff-widgets';
 
 // Re-export everything from diff-core for external consumers
 export {
@@ -91,26 +91,7 @@ const diffDecorations = StateField.define<DecorationSet>({
   provide: f => EditorView.decorations.from(f),
 });
 
-const diffInteractionHandlers = EditorView.domEventHandlers({
-  mousedown(event, view) {
-    if (!handleDiffWidgetAction(view, event.target)) return false;
-    event.preventDefault();
-    return true;
-  },
-  touchend(event, view) {
-    if (!handleDiffWidgetAction(view, event.target)) return false;
-    event.preventDefault();
-    return true;
-  },
-  keydown(event, view) {
-    if (event.key !== 'Enter' && event.key !== ' ') return false;
-    if (!handleDiffWidgetAction(view, event.target)) return false;
-    event.preventDefault();
-    return true;
-  },
-});
-
 // ===== Extension factory =====
 export function diffExtension(): Extension[] {
-  return [diffStateField, diffDecorations, diffInteractionHandlers];
+  return [diffStateField, diffDecorations];
 }
