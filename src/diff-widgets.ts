@@ -3,7 +3,7 @@ import {
   diffStateField, acceptAllEffect, rejectAllEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
   getAcceptedText, getFinalText,
-} from './diff-state';
+} from './diff-core';
 import { DiffLineType } from './types';
 
 export class DiffActionBarWidget extends WidgetType {

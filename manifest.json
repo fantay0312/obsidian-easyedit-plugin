@@ -1,7 +1,7 @@
 {
   "id": "obsidian-easyedit",
   "name": "EasyEdit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minAppVersion": "0.16.0",
   "description": "Cursor-style inline AI editing with selection formatting toolbar",
   "author": "EasyEdit",
