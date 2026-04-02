@@ -6,30 +6,47 @@ import {
 } from './diff-core';
 import { DiffLineType } from './types';
 
-function bindWidgetButton(
-  button: HTMLButtonElement,
-  view: EditorView,
-  onActivate: () => void,
-): void {
-  const activate = (e: Event): void => {
-    e.preventDefault();
-    e.stopPropagation();
-    onActivate();
-    view.focus();
-  };
+type DiffWidgetAction =
+  | 'accept-all'
+  | 'reject-all'
+  | 'accept-line'
+  | 'reject-line'
+  | 'keep-line'
+  | 'delete-line';
 
+function createActionButton(
+  label: string,
+  title: string,
+  action: DiffWidgetAction,
+  lineIndex?: number,
+): HTMLButtonElement {
+  const button = document.createElement('button');
   button.type = 'button';
-  button.addEventListener('mousedown', activate);
-  button.addEventListener('touchend', activate);
-  button.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
-  button.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      activate(e);
-    }
-  });
+  button.textContent = label;
+  button.title = title;
+  button.dataset.easyeditAction = action;
+  if (lineIndex !== undefined) {
+    button.dataset.easyeditLineIndex = String(lineIndex);
+  }
+  return button;
+}
+
+function resolveDiffIfDone(view: EditorView): void {
+  const state = view.state.field(diffStateField);
+  if (!state.active) return;
+  if (hasPendingLineDecisions(state.diffLines, state.lineStatuses)) return;
+
+  const finalText = getFinalText(state.diffLines, state.lineStatuses);
+  dispatchDiffReplacement(view, clearDiffEffect, finalText);
+}
+
+function dispatchLineDecision(
+  view: EditorView,
+  effect: typeof acceptLineEffect | typeof rejectLineEffect,
+  lineIndex: number,
+): void {
+  view.dispatch({ effects: effect.of(lineIndex) });
+  resolveDiffIfDone(view);
 }
 
 function dispatchDiffReplacement(
@@ -47,27 +64,60 @@ function dispatchDiffReplacement(
   });
 }
 
+export function handleDiffWidgetAction(view: EditorView, target: EventTarget | null): boolean {
+  const element = target instanceof Element
+    ? target
+    : target instanceof Node
+      ? target.parentElement
+      : null;
+  if (!element) return false;
+
+  const button = element.closest('button[data-easyedit-action]');
+  if (!(button instanceof HTMLButtonElement)) return false;
+
+  const action = button.dataset.easyeditAction as DiffWidgetAction | undefined;
+  const lineIndexValue = button.dataset.easyeditLineIndex;
+  const lineIndex = lineIndexValue !== undefined ? Number(lineIndexValue) : undefined;
+
+  switch (action) {
+    case 'accept-all': {
+      const state = view.state.field(diffStateField);
+      dispatchDiffReplacement(view, acceptAllEffect, getAcceptedText(state.diffLines));
+      break;
+    }
+    case 'reject-all': {
+      const state = view.state.field(diffStateField);
+      dispatchDiffReplacement(view, rejectAllEffect, state.originalText);
+      break;
+    }
+    case 'accept-line':
+      if (lineIndex !== undefined) dispatchLineDecision(view, acceptLineEffect, lineIndex);
+      break;
+    case 'reject-line':
+    case 'keep-line':
+      if (lineIndex !== undefined) dispatchLineDecision(view, rejectLineEffect, lineIndex);
+      break;
+    case 'delete-line':
+      if (lineIndex !== undefined) dispatchLineDecision(view, acceptLineEffect, lineIndex);
+      break;
+    default:
+      return false;
+  }
+
+  view.focus();
+  return true;
+}
+
 export class DiffActionBarWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const bar = document.createElement('div');
     bar.className = 'easyedit-diff-action-bar';
 
-    const acceptBtn = document.createElement('button');
+    const acceptBtn = createActionButton('✓ Accept All', 'Accept All', 'accept-all');
     acceptBtn.className = 'easyedit-btn-accept-all';
-    acceptBtn.textContent = '✓ Accept All';
-    bindWidgetButton(acceptBtn, view, () => {
-      const state = view.state.field(diffStateField);
-      const acceptedText = getAcceptedText(state.diffLines);
-      dispatchDiffReplacement(view, acceptAllEffect, acceptedText);
-    });
 
-    const rejectBtn = document.createElement('button');
+    const rejectBtn = createActionButton('✗ Reject All', 'Reject All', 'reject-all');
     rejectBtn.className = 'easyedit-btn-reject-all';
-    rejectBtn.textContent = '✗ Reject All';
-    bindWidgetButton(rejectBtn, view, () => {
-      const state = view.state.field(diffStateField);
-      dispatchDiffReplacement(view, rejectAllEffect, state.originalText);
-    });
 
     bar.appendChild(acceptBtn);
     bar.appendChild(rejectBtn);
@@ -75,7 +125,7 @@ export class DiffActionBarWidget extends WidgetType {
   }
 
   eq(): boolean { return true; }
-  ignoreEvent(): boolean { return true; }
+  ignoreEvent(): boolean { return false; }
 }
 
 export class LineActionWidget extends WidgetType {
@@ -88,56 +138,17 @@ export class LineActionWidget extends WidgetType {
     const span = document.createElement('span');
     span.className = 'easyedit-line-action';
 
-    const checkAutoResolve = (): void => {
-      setTimeout(() => {
-        const state = view.state.field(diffStateField);
-        if (!state.active) return;
-        if (!hasPendingLineDecisions(state.diffLines, state.lineStatuses)) {
-          const finalText = getFinalText(state.diffLines, state.lineStatuses);
-          view.dispatch({
-            annotations: easyEditTransaction.of(true),
-            effects: clearDiffEffect.of(undefined),
-            changes: { from: state.fromPos, to: state.toPos, insert: finalText },
-          });
-        }
-      }, 0);
-    };
-
     if (this.lineType === 'added') {
-      const accept = document.createElement('button');
-      accept.textContent = '✓';
-      accept.title = 'Accept';
-      bindWidgetButton(accept, view, () => {
-        view.dispatch({ effects: acceptLineEffect.of(this.lineIndex) });
-        checkAutoResolve();
-      });
+      const accept = createActionButton('✓', 'Accept', 'accept-line', this.lineIndex);
 
-      const reject = document.createElement('button');
-      reject.textContent = '✗';
-      reject.title = 'Reject';
-      bindWidgetButton(reject, view, () => {
-        view.dispatch({ effects: rejectLineEffect.of(this.lineIndex) });
-        checkAutoResolve();
-      });
+      const reject = createActionButton('✗', 'Reject', 'reject-line', this.lineIndex);
 
       span.appendChild(accept);
       span.appendChild(reject);
     } else if (this.lineType === 'deleted') {
-      const restore = document.createElement('button');
-      restore.textContent = '↩';
-      restore.title = 'Keep';
-      bindWidgetButton(restore, view, () => {
-        view.dispatch({ effects: rejectLineEffect.of(this.lineIndex) });
-        checkAutoResolve();
-      });
+      const restore = createActionButton('↩', 'Keep', 'keep-line', this.lineIndex);
 
-      const confirm = document.createElement('button');
-      confirm.textContent = '✗';
-      confirm.title = 'Delete';
-      bindWidgetButton(confirm, view, () => {
-        view.dispatch({ effects: acceptLineEffect.of(this.lineIndex) });
-        checkAutoResolve();
-      });
+      const confirm = createActionButton('✗', 'Delete', 'delete-line', this.lineIndex);
 
       span.appendChild(restore);
       span.appendChild(confirm);
@@ -150,5 +161,5 @@ export class LineActionWidget extends WidgetType {
     return this.lineIndex === other.lineIndex && this.lineType === other.lineType;
   }
 
-  ignoreEvent(): boolean { return true; }
+  ignoreEvent(): boolean { return false; }
 }

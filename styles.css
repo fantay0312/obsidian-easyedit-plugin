@@ -1,27 +1,46 @@
-/* ===== Selection Toolbar ===== */
+/*
+ * EasyEdit – Glassmorphism Design System
+ *
+ * Formula (from glassmorphism tutorial):
+ *   background: rgba(255, 255, 255, 0.7);
+ *   backdrop-filter: blur(10px);
+ *   -webkit-backdrop-filter: blur(10px);
+ *   border: 1px solid rgba(255, 255, 255, 0.3);
+ *
+ * Enhanced for production:
+ *   - Stronger blur (20-32px) for premium feel
+ *   - saturate(180%) for color vibrancy behind glass
+ *   - inset highlight on top edge for glass bevel
+ *   - Layered box-shadow for depth
+ */
+
+/* =============================================
+   SELECTION TOOLBAR
+   ============================================= */
 .easyedit-toolbar {
   display: flex;
   gap: 2px;
   padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 0.5px solid rgba(255, 255, 255, 0.6);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
+    0 2px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
   z-index: 100;
 }
 
 .theme-dark .easyedit-toolbar {
-  background: rgba(40, 40, 45, 0.6);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(30, 30, 35, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
-    0 2px 8px rgba(0, 0, 0, 0.15),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
+    0 2px 6px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .easyedit-toolbar-btn {
@@ -42,7 +61,7 @@
 }
 
 .easyedit-toolbar-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.07);
 }
 
 .theme-dark .easyedit-toolbar-btn:hover {
@@ -56,35 +75,38 @@
 .easyedit-toolbar-sep {
   width: 1px;
   margin: 4px 4px;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .theme-dark .easyedit-toolbar-sep {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ===== Inline Input ===== */
+/* =============================================
+   INLINE AI INPUT
+   ============================================= */
 .easyedit-inline-input {
   width: 420px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 0.5px solid rgba(255, 255, 255, 0.65);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 14px;
   box-shadow:
     0 16px 48px rgba(0, 0, 0, 0.1),
     0 4px 16px rgba(0, 0, 0, 0.06),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
   overflow: hidden;
 }
 
 .theme-dark .easyedit-inline-input {
-  background: rgba(35, 35, 40, 0.65);
+  background: rgba(28, 28, 32, 0.72);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow:
     0 16px 48px rgba(0, 0, 0, 0.35),
     0 4px 16px rgba(0, 0, 0, 0.2),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .easyedit-input-header {
@@ -144,7 +166,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 14px 10px;
-  border-top: 0.5px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .theme-dark .easyedit-input-footer {
@@ -153,9 +175,11 @@
 
 .easyedit-model-select {
   padding: 5px 10px;
-  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: var(--text-normal);
   font-size: 12px;
   outline: none;
@@ -164,7 +188,7 @@
 
 .theme-dark .easyedit-model-select {
   border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .easyedit-model-select:focus {
@@ -181,19 +205,21 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .easyedit-send-btn:hover {
   filter: brightness(1.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 
 .easyedit-send-btn:active {
   transform: scale(0.97);
 }
 
-/* ===== Streaming ===== */
+/* =============================================
+   STREAMING
+   ============================================= */
 .easyedit-streaming {
   background: rgba(0, 0, 0, 0.02);
 }
@@ -212,7 +238,9 @@
   50% { opacity: 0; }
 }
 
-/* ===== Diff Highlights ===== */
+/* =============================================
+   DIFF HIGHLIGHTS
+   ============================================= */
 .easyedit-diff-added {
   background-color: rgba(40, 167, 69, 0.1);
   position: relative;
@@ -233,28 +261,31 @@
   background-color: rgba(220, 53, 69, 0.14);
 }
 
-/* ===== Diff Action Bar ===== */
+/* =============================================
+   DIFF ACTION BAR
+   ============================================= */
 .easyedit-diff-action-bar {
   display: flex;
   gap: 8px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 0.5px solid rgba(255, 255, 255, 0.5);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   margin-bottom: 4px;
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.06),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.7);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .theme-dark .easyedit-diff-action-bar {
-  background: rgba(40, 40, 45, 0.6);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(30, 30, 35, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.25),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .easyedit-btn-accept-all,
@@ -275,7 +306,7 @@
 
 .easyedit-btn-accept-all:hover {
   background: rgba(40, 167, 69, 0.22);
-  box-shadow: 0 1px 4px rgba(40, 167, 69, 0.15);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
 }
 
 .easyedit-btn-reject-all {
@@ -285,7 +316,7 @@
 
 .easyedit-btn-reject-all:hover {
   background: rgba(220, 53, 69, 0.22);
-  box-shadow: 0 1px 4px rgba(220, 53, 69, 0.15);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
 }
 
 .theme-dark .easyedit-btn-accept-all { color: #5fd47a; background: rgba(40, 167, 69, 0.15); }
@@ -293,7 +324,9 @@
 .theme-dark .easyedit-btn-reject-all { color: #f07080; background: rgba(220, 53, 69, 0.15); }
 .theme-dark .easyedit-btn-reject-all:hover { background: rgba(220, 53, 69, 0.28); }
 
-/* ===== Line Actions ===== */
+/* =============================================
+   LINE ACTIONS
+   ============================================= */
 .easyedit-line-action {
   display: inline-flex;
   gap: 2px;
@@ -312,37 +345,66 @@
   padding: 2px 7px;
   border: none;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.75);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--text-normal);
   font-size: 12px;
   cursor: pointer;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   transition: all 0.12s ease;
 }
 
 .theme-dark .easyedit-line-action button {
-  background: rgba(60, 60, 65, 0.75);
+  background: rgba(50, 50, 55, 0.7);
 }
 
 .easyedit-line-action button:hover {
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .theme-dark .easyedit-line-action button:hover {
-  background: rgba(80, 80, 85, 0.85);
+  background: rgba(70, 70, 75, 0.85);
 }
 
-/* ===== Model Selection Modal ===== */
+/* =============================================
+   MODEL SELECTION MODAL – Glass
+   ============================================= */
 .easyedit-model-modal {
   padding: 0;
 }
 
+.easyedit-glass-modal .modal-content {
+  /* Glass */
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.theme-dark .easyedit-glass-modal .modal-content {
+  background: rgba(28, 28, 32, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 .easyedit-modal-header {
   padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(var(--mono-rgb-0, 0, 0, 0), 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .easyedit-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .easyedit-modal-title-row {
@@ -365,19 +427,20 @@
 .easyedit-modal-search {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid rgba(var(--mono-rgb-0, 0, 0, 0), 0.08);
   border-radius: 10px;
-  background: rgba(var(--mono-rgb-100, 255, 255, 255), 0.58);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   color: var(--text-normal);
   font-size: 14px;
   outline: none;
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
 }
 
 .theme-dark .easyedit-modal-search {
-  border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .easyedit-modal-search:focus {
@@ -398,7 +461,7 @@
 }
 
 .easyedit-modal-row:hover {
-  background: rgba(var(--mono-rgb-0, 0, 0, 0), 0.04);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .theme-dark .easyedit-modal-row:hover {
@@ -429,10 +492,11 @@
   color: var(--text-muted);
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(var(--mono-rgb-100, 255, 255, 255), 0.55);
-  border: 1px solid rgba(var(--mono-rgb-0, 0, 0, 0), 0.06);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* Glass pill */
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .theme-dark .easyedit-modal-badge {
@@ -451,57 +515,64 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid rgba(var(--mono-rgb-0, 0, 0, 0), 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .easyedit-modal-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .easyedit-modal-spacer {
   flex: 1;
 }
 
-.easyedit-glass-modal .modal-content {
-  background: rgba(var(--mono-rgb-100, 255, 255, 255), 0.78);
-  border: 1px solid rgba(var(--mono-rgb-100, 255, 255, 255), 0.28);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.18),
-    0 6px 18px rgba(0, 0, 0, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-}
-
-.theme-dark .easyedit-glass-modal .modal-content {
-  background: rgba(28, 28, 30, 0.84);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.42),
-    0 6px 18px rgba(0, 0, 0, 0.22),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
-}
-
+/* Modal & Settings buttons – Glass */
 .easyedit-glass-modal button,
 .easyedit-settings button {
   border-radius: 10px;
-  border: 1px solid rgba(var(--mono-rgb-0, 0, 0, 0), 0.08);
-  background: rgba(var(--mono-rgb-100, 255, 255, 255), 0.56);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s ease;
 }
 
 .theme-dark .easyedit-glass-modal button,
 .theme-dark .easyedit-settings button {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.easyedit-glass-modal button:hover,
+.easyedit-settings button:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.theme-dark .easyedit-glass-modal button:hover,
+.theme-dark .easyedit-settings button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* CTA button – accent glass */
 .easyedit-glass-modal button.mod-cta,
 .easyedit-settings button.mod-cta {
-  background: color-mix(in srgb, var(--interactive-accent) 78%, rgba(255, 255, 255, 0.18));
+  background: var(--interactive-accent, #7c5cbf);
   border-color: transparent;
   color: var(--text-on-accent, white);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
+.easyedit-glass-modal button.mod-cta:hover,
+.easyedit-settings button.mod-cta:hover {
+  filter: brightness(1.1);
+}
+
+/* =============================================
+   SETTINGS PANEL – Glass cards
+   ============================================= */
 .easyedit-settings {
   padding-bottom: 24px;
 }
@@ -509,33 +580,36 @@
 .easyedit-settings .setting-item {
   margin-bottom: 12px;
   padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(var(--mono-rgb-100, 255, 255, 255), 0.24);
-  background: rgba(var(--mono-rgb-100, 255, 255, 255), 0.52);
+  border-radius: 14px;
+  /* Glass card */
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .theme-dark .easyedit-settings .setting-item {
-  border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.22),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* Settings inputs – inner glass */
 .easyedit-settings .setting-item-control input,
 .easyedit-settings .setting-item-control textarea,
 .easyedit-settings .setting-item-control select {
   border-radius: 10px;
-  border: 1px solid rgba(var(--mono-rgb-0, 0, 0, 0), 0.08);
-  background: rgba(var(--mono-rgb-100, 255, 255, 255), 0.56);
-  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.32);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  /* Glass */
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .theme-dark .easyedit-settings .setting-item-control input,
@@ -543,5 +617,5 @@
 .theme-dark .easyedit-settings .setting-item-control select {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
