@@ -6,6 +6,39 @@ import {
 } from './diff-core';
 import { DiffLineType } from './types';
 
+function bindWidgetButton(
+  button: HTMLButtonElement,
+  view: EditorView,
+  onActivate: () => void,
+): void {
+  button.type = 'button';
+  button.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onActivate();
+    view.focus();
+  });
+}
+
+function dispatchDiffReplacement(
+  view: EditorView,
+  effect: typeof acceptAllEffect | typeof rejectAllEffect | typeof clearDiffEffect,
+  insert: string,
+): void {
+  const state = view.state.field(diffStateField);
+  if (!state.active) return;
+
+  view.dispatch({
+    annotations: easyEditTransaction.of(true),
+    effects: effect.of(undefined),
+    changes: { from: state.fromPos, to: state.toPos, insert },
+  });
+}
+
 export class DiffActionBarWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const bar = document.createElement('div');
@@ -14,28 +47,18 @@ export class DiffActionBarWidget extends WidgetType {
     const acceptBtn = document.createElement('button');
     acceptBtn.className = 'easyedit-btn-accept-all';
     acceptBtn.textContent = '✓ Accept All';
-    acceptBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault();
+    bindWidgetButton(acceptBtn, view, () => {
       const state = view.state.field(diffStateField);
       const acceptedText = getAcceptedText(state.diffLines);
-      view.dispatch({
-        annotations: easyEditTransaction.of(true),
-        effects: acceptAllEffect.of(undefined),
-        changes: { from: state.fromPos, to: state.toPos, insert: acceptedText },
-      });
+      dispatchDiffReplacement(view, acceptAllEffect, acceptedText);
     });
 
     const rejectBtn = document.createElement('button');
     rejectBtn.className = 'easyedit-btn-reject-all';
     rejectBtn.textContent = '✗ Reject All';
-    rejectBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault();
+    bindWidgetButton(rejectBtn, view, () => {
       const state = view.state.field(diffStateField);
-      view.dispatch({
-        annotations: easyEditTransaction.of(true),
-        effects: rejectAllEffect.of(undefined),
-        changes: { from: state.fromPos, to: state.toPos, insert: state.originalText },
-      });
+      dispatchDiffReplacement(view, rejectAllEffect, state.originalText);
     });
 
     bar.appendChild(acceptBtn);
@@ -76,8 +99,7 @@ export class LineActionWidget extends WidgetType {
       const accept = document.createElement('button');
       accept.textContent = '✓';
       accept.title = 'Accept';
-      accept.addEventListener('mousedown', (e) => {
-        e.preventDefault();
+      bindWidgetButton(accept, view, () => {
         view.dispatch({ effects: acceptLineEffect.of(this.lineIndex) });
         checkAutoResolve();
       });
@@ -85,8 +107,7 @@ export class LineActionWidget extends WidgetType {
       const reject = document.createElement('button');
       reject.textContent = '✗';
       reject.title = 'Reject';
-      reject.addEventListener('mousedown', (e) => {
-        e.preventDefault();
+      bindWidgetButton(reject, view, () => {
         view.dispatch({ effects: rejectLineEffect.of(this.lineIndex) });
         checkAutoResolve();
       });
@@ -97,8 +118,7 @@ export class LineActionWidget extends WidgetType {
       const restore = document.createElement('button');
       restore.textContent = '↩';
       restore.title = 'Keep';
-      restore.addEventListener('mousedown', (e) => {
-        e.preventDefault();
+      bindWidgetButton(restore, view, () => {
         view.dispatch({ effects: rejectLineEffect.of(this.lineIndex) });
         checkAutoResolve();
       });
@@ -106,8 +126,7 @@ export class LineActionWidget extends WidgetType {
       const confirm = document.createElement('button');
       confirm.textContent = '✗';
       confirm.title = 'Delete';
-      confirm.addEventListener('mousedown', (e) => {
-        e.preventDefault();
+      bindWidgetButton(confirm, view, () => {
         view.dispatch({ effects: acceptLineEffect.of(this.lineIndex) });
         checkAutoResolve();
       });

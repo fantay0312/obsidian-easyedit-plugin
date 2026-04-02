@@ -27,6 +27,7 @@ class ModelSelectionModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass('easyedit-model-modal');
+    this.modalEl.addClass('easyedit-glass-modal');
 
     // Header
     const header = contentEl.createDiv('easyedit-modal-header');
@@ -131,6 +132,7 @@ class ModelSelectionModal extends Modal {
   }
 
   onClose(): void {
+    this.modalEl.removeClass('easyedit-glass-modal');
     this.contentEl.empty();
   }
 }
@@ -144,6 +146,7 @@ export class EasyEditSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    containerEl.addClass('easyedit-settings');
 
     // --- API Endpoint ---
     new Setting(containerEl)
