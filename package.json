@@ -1,6 +1,6 @@
 {
   "name": "obsidian-easyedit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cursor-style inline AI editing for Obsidian",
   "main": "main.js",
   "scripts": {
