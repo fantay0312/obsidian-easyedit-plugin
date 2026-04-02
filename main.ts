@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { EasyEditSettings, DEFAULT_SETTINGS } from './src/types';
 import { EasyEditSettingTab } from './src/settings';
 import { selectionToolbar } from './src/selection-toolbar';
-import { inlineInputExtension, triggerInlineInput, startAIPolish } from './src/inline-input';
+import { cancelActiveAIRequest, inlineInputExtension, triggerInlineInput, startAIPolish } from './src/inline-input';
 import { diffExtension, diffStateField } from './src/diff-state';
 
 export default class EasyEditPlugin extends Plugin {
@@ -36,7 +36,9 @@ export default class EasyEditPlugin extends Plugin {
     ]);
   }
 
-  onunload(): void {}
+  onunload(): void {
+    cancelActiveAIRequest();
+  }
 
   async loadSettings(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());

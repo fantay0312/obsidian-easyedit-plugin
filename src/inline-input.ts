@@ -25,6 +25,7 @@ export const hideInlineInputEffect = StateEffect.define<void>();
 // ===== Shared context =====
 let pluginRef: EasyEditPlugin | null = null;
 let activeAbortController: AbortController | null = null;
+let activeEditorView: EditorView | null = null;
 
 function dispatchEasyEdit(
   view: EditorView,
@@ -40,6 +41,15 @@ export function cancelActiveAIRequest(): void {
   if (!activeAbortController) return;
   activeAbortController.abort();
   activeAbortController = null;
+}
+
+function cancelActiveAIRequestFromView(view: EditorView): boolean {
+  if (!activeAbortController) return false;
+  if (activeEditorView && activeEditorView !== view) return false;
+
+  cancelActiveAIRequest();
+  new Notice('EasyEdit: request cancelled.');
+  return true;
 }
 
 function createInlineInputDOM(
@@ -178,6 +188,16 @@ const inlineInputField = StateField.define<Tooltip | null>({
   provide: f => showTooltip.from(f),
 });
 
+const activeRequestEscapeHandler = EditorView.domEventHandlers({
+  keydown(event, view) {
+    if (event.key !== 'Escape') return false;
+    if (!cancelActiveAIRequestFromView(view)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  },
+});
+
 const externalEditGuard = ViewPlugin.fromClass(class {
   update(update: ViewUpdate): void {
     if (!update.docChanged) return;
@@ -217,6 +237,7 @@ async function runAIRequest(
   abortController: AbortController,
 ): Promise<void> {
   activeAbortController = abortController;
+  activeEditorView = view;
 
   dispatchEasyEdit(view, {
     effects: startStreamingEffect.of({ from, to, originalText }),
@@ -294,6 +315,9 @@ async function runAIRequest(
   } finally {
     if (activeAbortController === abortController) {
       activeAbortController = null;
+    }
+    if (activeEditorView === view) {
+      activeEditorView = null;
     }
   }
 }
@@ -393,5 +417,5 @@ export function triggerInlineInput(view: EditorView, plugin: EasyEditPlugin): vo
 // ===== Extension factory =====
 export function inlineInputExtension(plugin: EasyEditPlugin): Extension[] {
   pluginRef = plugin;
-  return [inlineInputField, externalEditGuard];
+  return [inlineInputField, externalEditGuard, activeRequestEscapeHandler];
 }
