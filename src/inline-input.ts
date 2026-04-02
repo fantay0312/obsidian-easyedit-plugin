@@ -192,14 +192,16 @@ const externalEditGuard = ViewPlugin.fromClass(class {
 
     cancelActiveAIRequest();
 
-    const currentDiffState = update.state.field(diffStateField);
-    if (currentDiffState.active || currentDiffState.streaming) {
-      dispatchEasyEdit(update.view, {
-        effects: clearDiffEffect.of(undefined),
-      });
-    }
-
-    new Notice('EasyEdit stopped because the document changed during AI review.');
+    // Must defer dispatch — CM6 forbids dispatch inside ViewPlugin.update()
+    setTimeout(() => {
+      const currentDiffState = update.view.state.field(diffStateField);
+      if (currentDiffState.active || currentDiffState.streaming) {
+        dispatchEasyEdit(update.view, {
+          effects: clearDiffEffect.of(undefined),
+        });
+      }
+      new Notice('EasyEdit: stopped due to external edit.');
+    }, 0);
   }
 });
 
