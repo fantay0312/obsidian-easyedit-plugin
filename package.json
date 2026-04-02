@@ -1,0 +1,17 @@
+{
+  "name": "obsidian-easyedit",
+  "version": "1.0.0",
+  "description": "Cursor-style inline AI editing for Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "esbuild": "^0.20.0",
+    "obsidian": "latest",
+    "tslib": "^2.8.1",
+    "typescript": "^5.3.3"
+  }
+}

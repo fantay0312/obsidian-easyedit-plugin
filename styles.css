@@ -1,0 +1,232 @@
+/* ===== Selection Toolbar ===== */
+.easyedit-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+}
+
+.easyedit-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-normal);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.easyedit-toolbar-btn:hover {
+  background: var(--background-modifier-hover, rgba(0, 0, 0, 0.08));
+}
+
+.easyedit-toolbar-btn:active {
+  transform: scale(0.95);
+}
+
+.easyedit-toolbar-sep {
+  width: 1px;
+  margin: 4px 4px;
+  background: var(--background-modifier-border, #ddd);
+}
+
+/* ===== Inline Input ===== */
+.easyedit-inline-input {
+  width: 400px;
+  background: var(--background-primary);
+  border: 1px solid var(--interactive-accent, #7c5cbf);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.easyedit-input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.easyedit-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.easyedit-close-btn:hover {
+  color: var(--text-normal);
+}
+
+.easyedit-input-text {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-normal);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.easyedit-input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--background-modifier-border, #ddd);
+}
+
+.easyedit-model-select {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border, #ddd);
+  border-radius: 6px;
+  background: var(--background-secondary, #f5f5f5);
+  color: var(--text-normal);
+  font-size: 12px;
+  outline: none;
+}
+
+.easyedit-send-btn {
+  padding: 4px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--interactive-accent, #7c5cbf);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.easyedit-send-btn:hover {
+  background: var(--interactive-accent-hover, #6b4eab);
+}
+
+/* ===== Streaming ===== */
+.easyedit-streaming {
+  background: var(--background-secondary, #f5f5f5);
+  opacity: 0.8;
+}
+
+.easyedit-typing-cursor::after {
+  content: '▍';
+  animation: easyedit-blink 1s step-end infinite;
+  color: var(--interactive-accent, #7c5cbf);
+}
+
+@keyframes easyedit-blink {
+  50% { opacity: 0; }
+}
+
+/* ===== Diff Highlights ===== */
+.easyedit-diff-added {
+  background-color: rgba(40, 167, 69, 0.15);
+  position: relative;
+}
+
+.easyedit-diff-deleted {
+  background-color: rgba(220, 53, 69, 0.15);
+  text-decoration: line-through;
+  color: var(--text-muted);
+  position: relative;
+}
+
+.theme-dark .easyedit-diff-added {
+  background-color: rgba(40, 167, 69, 0.2);
+}
+
+.theme-dark .easyedit-diff-deleted {
+  background-color: rgba(220, 53, 69, 0.2);
+}
+
+/* ===== Diff Action Bar ===== */
+.easyedit-diff-action-bar {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--background-secondary, #f5f5f5);
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.easyedit-btn-accept-all,
+.easyedit-btn-reject-all {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.easyedit-btn-accept-all {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+}
+
+.easyedit-btn-accept-all:hover {
+  background: rgba(40, 167, 69, 0.35);
+}
+
+.easyedit-btn-reject-all {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+}
+
+.easyedit-btn-reject-all:hover {
+  background: rgba(220, 53, 69, 0.35);
+}
+
+/* ===== Line Actions ===== */
+.easyedit-line-action {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  vertical-align: middle;
+}
+
+.cm-line.easyedit-diff-added:hover .easyedit-line-action,
+.cm-line.easyedit-diff-deleted:hover .easyedit-line-action {
+  opacity: 1;
+}
+
+.easyedit-line-action button {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 3px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.easyedit-line-action button:hover {
+  background: var(--background-modifier-hover, rgba(0, 0, 0, 0.08));
+}
