@@ -4,11 +4,30 @@ interface ModelListResponse {
   data: Array<{ id: string }>;
 }
 
+/**
+ * Build the chat completions URL smartly:
+ * - If endpoint already contains "/chat/completions", use as-is
+ * - Otherwise append "/v1/chat/completions"
+ * This supports: OpenAI, Google Gemini OpenAI-compat, OpenRouter, etc.
+ */
+function buildChatUrl(endpoint: string): string {
+  const base = endpoint.replace(/\/+$/, '');
+  if (base.includes('/chat/completions')) return base;
+  return `${base}/v1/chat/completions`;
+}
+
+function buildModelsUrl(endpoint: string): string {
+  const base = endpoint.replace(/\/+$/, '');
+  if (base.includes('/models')) return base;
+  if (base.includes('/openai')) return `${base}/v1/models`;
+  return `${base}/v1/models`;
+}
+
 export async function fetchModelList(
   endpoint: string,
   apiKey: string,
 ): Promise<string[]> {
-  const url = `${endpoint.replace(/\/+$/, '')}/v1/models`;
+  const url = buildModelsUrl(endpoint);
   const response = await fetch(url, {
     headers: { 'Authorization': `Bearer ${apiKey}` },
   });
@@ -29,7 +48,8 @@ export async function* streamChat(
   messages: ChatMessage[],
   signal: AbortSignal
 ): AsyncGenerator<string, void, unknown> {
-  const url = `${endpoint.replace(/\/+$/, '')}/v1/chat/completions`;
+  const url = buildChatUrl(endpoint);
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -41,10 +61,11 @@ export async function* streamChat(
   });
 
   if (!response.ok) {
+    const body = await response.text().catch(() => '');
     if (response.status === 401) throw new Error('Invalid API key');
     if (response.status === 429) throw new Error('Rate limit exceeded');
-    if (response.status >= 500) throw new Error('Server error');
-    throw new Error(`API error: ${response.status}`);
+    if (response.status >= 500) throw new Error(`Server error: ${response.status}`);
+    throw new Error(`API ${response.status}: ${body.slice(0, 200)}`);
   }
 
   const reader = response.body!.getReader();
