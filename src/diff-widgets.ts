@@ -38,24 +38,22 @@ export class DiffActionBarWidget extends WidgetType {
     const acceptBtn = document.createElement('button');
     acceptBtn.className = 'easyedit-btn-accept-all';
     acceptBtn.textContent = '✓ Accept All';
+    acceptBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      acceptAll(view);
+    });
     bar.appendChild(acceptBtn);
 
     const rejectBtn = document.createElement('button');
     rejectBtn.className = 'easyedit-btn-reject-all';
     rejectBtn.textContent = '✗ Reject All';
-    bar.appendChild(rejectBtn);
-
-    bar.addEventListener('mousedown', (e) => {
-      const target = e.target as HTMLElement;
+    rejectBtn.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
-
-      if (target.closest('.easyedit-btn-accept-all')) {
-        acceptAll(view);
-      } else if (target.closest('.easyedit-btn-reject-all')) {
-        rejectAll(view);
-      }
+      rejectAll(view);
     });
+    bar.appendChild(rejectBtn);
 
     return bar;
   }

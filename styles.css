@@ -290,6 +290,27 @@
   to { transform: rotate(360deg); }
 }
 
+.easyedit-stream-preview {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(124, 92, 191, 0.05);
+  border: 1px solid rgba(124, 92, 191, 0.12);
+}
+
+.theme-dark .easyedit-stream-preview {
+  background: rgba(124, 92, 191, 0.1);
+  border-color: rgba(124, 92, 191, 0.22);
+}
+
+.easyedit-stream-preview-text {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  color: var(--text-normal);
+}
+
 /* =============================================
    DIFF HIGHLIGHTS
    ============================================= */

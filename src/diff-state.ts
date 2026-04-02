@@ -5,7 +5,7 @@ import { DiffActionBarWidget, LineActionWidget } from './diff-widgets';
 
 // Re-export everything from diff-core for external consumers
 export {
-  startStreamingEffect, finishStreamingEffect,
+  startStreamingEffect, appendStreamChunkEffect, finishStreamingEffect,
   applyDiffEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
   diffAction,
@@ -15,16 +15,32 @@ export {
   hasActionableDiff, hasPendingLineDecisions, isLineVisible,
 } from './diff-core';
 
-// ===== Loading Spinner Widget =====
-class LoadingSpinnerWidget extends WidgetType {
+// ===== Streaming Preview Widget =====
+class StreamingPreviewWidget extends WidgetType {
+  constructor(private previewText: string) { super(); }
+
   toDOM(): HTMLElement {
-    const span = document.createElement('span');
-    span.className = 'easyedit-loading-spinner';
-    span.textContent = ' 思考中...';
-    return span;
+    const container = document.createElement('div');
+    container.className = 'easyedit-stream-preview';
+
+    if (this.previewText) {
+      const body = document.createElement('pre');
+      body.className = 'easyedit-stream-preview-text';
+      body.textContent = this.previewText;
+      container.appendChild(body);
+    }
+
+    const status = document.createElement('div');
+    status.className = 'easyedit-loading-spinner';
+    status.textContent = ' 思考中...';
+    container.appendChild(status);
+
+    return container;
   }
 
-  eq(): boolean { return true; }
+  eq(other: StreamingPreviewWidget): boolean {
+    return this.previewText === other.previewText;
+  }
 }
 
 // ===== Decorations =====
@@ -45,9 +61,12 @@ const diffDecorations = StateField.define<DecorationSet>({
         const line = doc.line(i);
         decorations.push(Decoration.line({ class: 'easyedit-loading' }).range(line.from));
       }
-      // Add loading spinner widget at the end of the last line
       decorations.push(
-        Decoration.widget({ widget: new LoadingSpinnerWidget(), side: 1 })
+        Decoration.widget({
+          widget: new StreamingPreviewWidget(state.newText),
+          block: true,
+          side: 1,
+        })
           .range(clampedTo)
       );
     }

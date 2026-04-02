@@ -4,7 +4,7 @@ import { Notice } from 'obsidian';
 import type EasyEditPlugin from '../main';
 import { streamChat, buildEditMessages, buildGenerateMessages, buildPolishMessages } from './ai-service';
 import {
-  diffStateField, startStreamingEffect,
+  diffStateField, startStreamingEffect, appendStreamChunkEffect,
   applyDiffEffect, clearDiffEffect, diffAction,
   computeLineDiff, easyEditTransaction, getMergedText,
   hasActionableDiff, isEasyEditTransaction,
@@ -250,7 +250,7 @@ async function runAIRequest(
   });
 
   try {
-    // Buffer the full AI response -- no document changes during generation
+    // Keep a live preview in decorations while buffering the final text for diffing
     let fullText = '';
     for await (const chunk of streamChat(
       plugin.settings.apiEndpoint,
@@ -263,6 +263,9 @@ async function runAIRequest(
       if (!currentState.streaming) return;
 
       fullText += chunk;
+      dispatchEasyEdit(view, {
+        effects: appendStreamChunkEffect.of(chunk),
+      });
     }
 
     // Streaming finished -- check state is still valid

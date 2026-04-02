@@ -18,6 +18,7 @@ export const startStreamingEffect = StateEffect.define<{
   to: number;
   originalText: string;
 }>();
+export const appendStreamChunkEffect = StateEffect.define<string>();
 export const finishStreamingEffect = StateEffect.define<void>();
 export const applyDiffEffect = StateEffect.define<DiffResult>();
 export const acceptLineEffect = StateEffect.define<number>();
@@ -51,23 +52,23 @@ const EMPTY_STATE: DiffStateData = {
 export const diffStateField = StateField.define<DiffStateData>({
   create: () => ({ ...EMPTY_STATE }),
   update(state, tr) {
+    let s = { ...state };
+
     // Unified annotation-based actions — reliable from widget event handlers
     const action = tr.annotation(diffAction);
     if (action) {
       if (action.type === 'clear') return { ...EMPTY_STATE };
-      if (action.type === 'acceptLine' && state.active) {
-        const statuses = [...state.lineStatuses];
+      if (action.type === 'acceptLine' && s.active) {
+        const statuses = [...s.lineStatuses];
         statuses[action.index] = 'accepted';
-        return { ...state, lineStatuses: statuses };
+        s = { ...s, lineStatuses: statuses };
       }
-      if (action.type === 'rejectLine' && state.active) {
-        const statuses = [...state.lineStatuses];
+      if (action.type === 'rejectLine' && s.active) {
+        const statuses = [...s.lineStatuses];
         statuses[action.index] = 'rejected';
-        return { ...state, lineStatuses: statuses };
+        s = { ...s, lineStatuses: statuses };
       }
     }
-
-    let s = { ...state };
 
     for (const e of tr.effects) {
       if (e.is(startStreamingEffect)) {
@@ -78,6 +79,8 @@ export const diffStateField = StateField.define<DiffStateData>({
           fromPos: e.value.from,
           toPos: e.value.to,
         };
+      } else if (e.is(appendStreamChunkEffect)) {
+        s = { ...s, newText: s.newText + e.value };
       } else if (e.is(finishStreamingEffect)) {
         s = { ...s, streaming: false };
       } else if (e.is(applyDiffEffect)) {
