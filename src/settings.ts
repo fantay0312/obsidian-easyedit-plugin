@@ -279,7 +279,9 @@ export class EasyEditSettingTab extends PluginSettingTab {
 
   private getModelsDesc(): string {
     const count = this.plugin.settings.customModels.length;
-    if (count === 0) return 'No models selected. Click "Fetch & Select" to load from API.';
-    return `${count} models: ${this.plugin.settings.customModels.join(', ')}`;
+    if (count === 0) return 'No models selected. Click "Fetch & Select" to load.';
+    const preview = this.plugin.settings.customModels.slice(0, 3).join(', ');
+    const more = count > 3 ? ` and ${count - 3} more` : '';
+    return `${count} models selected: ${preview}${more}`;
   }
 }

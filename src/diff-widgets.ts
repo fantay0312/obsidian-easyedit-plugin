@@ -1,4 +1,5 @@
 import { EditorView, WidgetType } from '@codemirror/view';
+import { Notice } from 'obsidian';
 import {
   diffStateField, clearDiffAction,
   acceptLineAction, rejectLineAction,
@@ -97,7 +98,10 @@ export class LineActionWidget extends WidgetType {
       accept.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        const before = view.state.field(diffStateField).lineStatuses[idx];
         view.dispatch({ annotations: acceptLineAction.of(idx) });
+        const after = view.state.field(diffStateField).lineStatuses[idx];
+        new Notice(`[debug] line ${idx} accept: ${before}→${after}`);
         autoResolve(view);
       });
 
@@ -107,7 +111,10 @@ export class LineActionWidget extends WidgetType {
       reject.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        const before = view.state.field(diffStateField).lineStatuses[idx];
         view.dispatch({ annotations: rejectLineAction.of(idx) });
+        const after = view.state.field(diffStateField).lineStatuses[idx];
+        new Notice(`[debug] line ${idx} reject: ${before}→${after}`);
         autoResolve(view);
       });
 
@@ -121,6 +128,7 @@ export class LineActionWidget extends WidgetType {
         e.preventDefault();
         e.stopPropagation();
         view.dispatch({ annotations: rejectLineAction.of(idx) });
+        new Notice(`[debug] line ${idx} keep (reject delete)`);
         autoResolve(view);
       });
 
@@ -131,6 +139,7 @@ export class LineActionWidget extends WidgetType {
         e.preventDefault();
         e.stopPropagation();
         view.dispatch({ annotations: acceptLineAction.of(idx) });
+        new Notice(`[debug] line ${idx} delete (accept delete)`);
         autoResolve(view);
       });
 
