@@ -81,7 +81,7 @@ const toolbarField = StateField.define<Tooltip | null>({
       if (e.is(showToolbarEffect)) {
         return {
           pos: e.value.pos,
-          above: true,
+          above: false,
           strictSide: false,
           arrow: false,
           create: (view: EditorView) => createToolbarDOM(view),
