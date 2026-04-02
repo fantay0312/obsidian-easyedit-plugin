@@ -1,11 +1,49 @@
 import { EditorView, WidgetType } from '@codemirror/view';
-import { Notice } from 'obsidian';
 import {
   diffStateField, acceptAllEffect, rejectAllEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
   easyEditTransaction, getAcceptedText, getFinalText, hasPendingLineDecisions,
 } from './diff-core';
 import { DiffLineType } from './types';
+
+/**
+ * Two-step dispatch: first replace text, then clear state.
+ * This avoids the issue where effects+changes in a single transaction
+ * don't work (possibly due to esbuild bundling duplicating the effect identity).
+ */
+function acceptAll(view: EditorView): void {
+  const s = view.state.field(diffStateField);
+  if (!s.active) return;
+
+  // Step 1: replace merged text with accepted text
+  view.dispatch({
+    annotations: easyEditTransaction.of(true),
+    changes: { from: s.fromPos, to: s.toPos, insert: getAcceptedText(s.diffLines) },
+  });
+
+  // Step 2: clear diff state
+  view.dispatch({
+    annotations: easyEditTransaction.of(true),
+    effects: clearDiffEffect.of(undefined),
+  });
+}
+
+function rejectAll(view: EditorView): void {
+  const s = view.state.field(diffStateField);
+  if (!s.active) return;
+
+  // Step 1: replace merged text with original text
+  view.dispatch({
+    annotations: easyEditTransaction.of(true),
+    changes: { from: s.fromPos, to: s.toPos, insert: s.originalText },
+  });
+
+  // Step 2: clear diff state
+  view.dispatch({
+    annotations: easyEditTransaction.of(true),
+    effects: clearDiffEffect.of(undefined),
+  });
+}
 
 export class DiffActionBarWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
@@ -22,49 +60,15 @@ export class DiffActionBarWidget extends WidgetType {
     rejectBtn.textContent = '✗ Reject All';
     bar.appendChild(rejectBtn);
 
-    // Use a single mousedown listener on the bar to avoid any event issues
     bar.addEventListener('mousedown', (e) => {
       const target = e.target as HTMLElement;
-      const isAccept = target.closest('.easyedit-btn-accept-all');
-      const isReject = target.closest('.easyedit-btn-reject-all');
-      if (!isAccept && !isReject) return;
-
       e.preventDefault();
       e.stopPropagation();
 
-      try {
-        const s = view.state.field(diffStateField);
-        if (!s.active) {
-          new Notice('[EasyEdit debug] state not active');
-          return;
-        }
-
-        const docLen = view.state.doc.length;
-        if (s.fromPos < 0 || s.toPos > docLen || s.fromPos > s.toPos) {
-          new Notice(`[EasyEdit debug] invalid range: ${s.fromPos}-${s.toPos}, docLen=${docLen}`);
-          return;
-        }
-
-        const insert = isAccept
-          ? getAcceptedText(s.diffLines)
-          : s.originalText;
-
-        const effect = isAccept ? acceptAllEffect : rejectAllEffect;
-
-        view.dispatch({
-          annotations: easyEditTransaction.of(true),
-          effects: effect.of(undefined),
-          changes: { from: s.fromPos, to: s.toPos, insert },
-        });
-
-        // Verify the state was cleared
-        const after = view.state.field(diffStateField);
-        if (after.active) {
-          new Notice('[EasyEdit debug] state still active after dispatch!');
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        new Notice(`[EasyEdit error] ${msg}`);
+      if (target.closest('.easyedit-btn-accept-all')) {
+        acceptAll(view);
+      } else if (target.closest('.easyedit-btn-reject-all')) {
+        rejectAll(view);
       }
     });
 
@@ -72,25 +76,24 @@ export class DiffActionBarWidget extends WidgetType {
   }
 
   eq(): boolean { return true; }
-
   ignoreEvent(): boolean { return true; }
 }
 
 function autoResolve(view: EditorView): void {
   setTimeout(() => {
-    try {
-      const s = view.state.field(diffStateField);
-      if (!s.active) return;
-      if (hasPendingLineDecisions(s.diffLines, s.lineStatuses)) return;
-      view.dispatch({
-        annotations: easyEditTransaction.of(true),
-        effects: clearDiffEffect.of(undefined),
-        changes: { from: s.fromPos, to: s.toPos, insert: getFinalText(s.diffLines, s.lineStatuses) },
-      });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      new Notice(`[EasyEdit autoResolve error] ${msg}`);
-    }
+    const s = view.state.field(diffStateField);
+    if (!s.active) return;
+    if (hasPendingLineDecisions(s.diffLines, s.lineStatuses)) return;
+
+    const finalText = getFinalText(s.diffLines, s.lineStatuses);
+    view.dispatch({
+      annotations: easyEditTransaction.of(true),
+      changes: { from: s.fromPos, to: s.toPos, insert: finalText },
+    });
+    view.dispatch({
+      annotations: easyEditTransaction.of(true),
+      effects: clearDiffEffect.of(undefined),
+    });
   }, 0);
 }
 
