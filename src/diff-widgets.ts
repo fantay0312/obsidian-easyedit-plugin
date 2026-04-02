@@ -1,7 +1,7 @@
 import { EditorView, WidgetType } from '@codemirror/view';
 import {
   diffStateField, diffAction,
-  easyEditTransaction, getAcceptedText, getFinalText, hasPendingLineDecisions,
+  easyEditTransaction, getAcceptedText, getFinalText, getVisibleText, hasPendingLineDecisions,
 } from './diff-core';
 import { DiffLineType } from './types';
 
@@ -64,18 +64,37 @@ export class DiffActionBarWidget extends WidgetType {
   ignoreEvent(): boolean { return true; }
 }
 
-function autoResolve(view: EditorView): void {
-  setTimeout(() => {
-    const s = view.state.field(diffStateField);
-    if (!s.active) return;
-    if (hasPendingLineDecisions(s.diffLines, s.lineStatuses)) return;
+function applyLineDecision(
+  view: EditorView,
+  lineIndex: number,
+  decision: 'acceptLine' | 'rejectLine',
+): void {
+  const s = view.state.field(diffStateField);
+  if (!s.active) return;
 
-    const finalText = getFinalText(s.diffLines, s.lineStatuses);
+  const nextStatuses = [...s.lineStatuses];
+  nextStatuses[lineIndex] = decision === 'acceptLine' ? 'accepted' : 'rejected';
+
+  if (!hasPendingLineDecisions(s.diffLines, nextStatuses)) {
     view.dispatch({
       annotations: [easyEditTransaction.of(true), diffAction.of({ type: 'clear' })],
-      changes: { from: s.fromPos, to: s.toPos, insert: finalText },
+      changes: {
+        from: s.fromPos,
+        to: s.toPos,
+        insert: getFinalText(s.diffLines, nextStatuses),
+      },
     });
-  }, 0);
+    return;
+  }
+
+  view.dispatch({
+    annotations: [easyEditTransaction.of(true), diffAction.of({ type: decision, index: lineIndex })],
+    changes: {
+      from: s.fromPos,
+      to: s.toPos,
+      insert: getVisibleText(s.diffLines, nextStatuses),
+    },
+  });
 }
 
 export class LineActionWidget extends WidgetType {
@@ -96,8 +115,7 @@ export class LineActionWidget extends WidgetType {
       accept.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ annotations: diffAction.of({ type: 'acceptLine', index: idx }) });
-        autoResolve(view);
+        applyLineDecision(view, idx, 'acceptLine');
       });
 
       const reject = document.createElement('button');
@@ -106,8 +124,7 @@ export class LineActionWidget extends WidgetType {
       reject.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ annotations: diffAction.of({ type: 'rejectLine', index: idx }) });
-        autoResolve(view);
+        applyLineDecision(view, idx, 'rejectLine');
       });
 
       span.appendChild(accept);
@@ -119,8 +136,7 @@ export class LineActionWidget extends WidgetType {
       restore.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ annotations: diffAction.of({ type: 'rejectLine', index: idx }) });
-        autoResolve(view);
+        applyLineDecision(view, idx, 'rejectLine');
       });
 
       const del = document.createElement('button');
@@ -129,8 +145,7 @@ export class LineActionWidget extends WidgetType {
       del.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        view.dispatch({ annotations: diffAction.of({ type: 'acceptLine', index: idx }) });
-        autoResolve(view);
+        applyLineDecision(view, idx, 'acceptLine');
       });
 
       span.appendChild(restore);

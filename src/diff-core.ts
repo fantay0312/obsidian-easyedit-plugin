@@ -180,6 +180,25 @@ export function hasActionableDiff(diffLines: DiffLine[]): boolean {
   return diffLines.some(line => line.type !== 'unchanged');
 }
 
+export function isLineVisible(
+  line: DiffLine,
+  status: DiffLineStatus,
+): boolean {
+  if (line.type === 'unchanged') return true;
+  if (line.type === 'added') return status !== 'rejected';
+  return status !== 'accepted';
+}
+
+export function getVisibleText(
+  diffLines: DiffLine[],
+  lineStatuses: DiffLineStatus[],
+): string {
+  return diffLines
+    .filter((line, index) => isLineVisible(line, lineStatuses[index]))
+    .map(line => line.content)
+    .join('\n');
+}
+
 export function getFinalText(
   diffLines: DiffLine[],
   lineStatuses: DiffLineStatus[],

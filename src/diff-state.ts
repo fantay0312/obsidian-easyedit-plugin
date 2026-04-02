@@ -1,6 +1,6 @@
 import { StateField, Extension, Range } from '@codemirror/state';
 import { EditorView, Decoration, DecorationSet, WidgetType } from '@codemirror/view';
-import { diffStateField } from './diff-core';
+import { diffStateField, isLineVisible } from './diff-core';
 import { DiffActionBarWidget, LineActionWidget } from './diff-widgets';
 
 // Re-export everything from diff-core for external consumers
@@ -10,9 +10,9 @@ export {
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
   diffAction,
   diffStateField,
-  computeLineDiff, getMergedText, getAcceptedText, getFinalText,
+  computeLineDiff, getMergedText, getAcceptedText, getFinalText, getVisibleText,
   easyEditTransaction, isEasyEditTransaction,
-  hasActionableDiff, hasPendingLineDecisions,
+  hasActionableDiff, hasPendingLineDecisions, isLineVisible,
 } from './diff-core';
 
 // ===== Loading Spinner Widget =====
@@ -72,15 +72,15 @@ const diffDecorations = StateField.define<DecorationSet>({
       for (let i = 0; i < state.diffLines.length && lineNum <= doc.lines; i++) {
         const dl = state.diffLines[i];
         const status = state.lineStatuses[i];
-        if (status !== 'pending') { lineNum++; continue; }
+        if (!isLineVisible(dl, status)) continue;
 
         const line = doc.line(lineNum);
-        if (dl.type === 'added') {
+        if (status === 'pending' && dl.type === 'added') {
           decorations.push(Decoration.line({ class: 'easyedit-diff-added' }).range(line.from));
           decorations.push(
             Decoration.widget({ widget: new LineActionWidget(i, dl.type), side: 1 }).range(line.to)
           );
-        } else if (dl.type === 'deleted') {
+        } else if (status === 'pending' && dl.type === 'deleted') {
           decorations.push(Decoration.line({ class: 'easyedit-diff-deleted' }).range(line.from));
           decorations.push(
             Decoration.widget({ widget: new LineActionWidget(i, dl.type), side: 1 }).range(line.to)
