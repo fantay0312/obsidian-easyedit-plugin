@@ -5,20 +5,22 @@ import { DiffActionBarWidget, LineActionWidget } from './diff-widgets';
 
 // Re-export everything from diff-core for external consumers
 export {
-  startStreamingEffect, appendStreamChunkEffect, finishStreamingEffect,
-  applyDiffEffect, acceptAllEffect, rejectAllEffect,
+  startStreamingEffect, finishStreamingEffect,
+  applyDiffEffect,
   acceptLineEffect, rejectLineEffect, clearDiffEffect,
+  clearDiffAction,
   diffStateField,
   computeLineDiff, getMergedText, getAcceptedText, getFinalText,
   easyEditTransaction, isEasyEditTransaction,
   hasActionableDiff, hasPendingLineDecisions,
 } from './diff-core';
 
-// ===== Typing Cursor Widget =====
-class TypingCursorWidget extends WidgetType {
+// ===== Loading Spinner Widget =====
+class LoadingSpinnerWidget extends WidgetType {
   toDOM(): HTMLElement {
     const span = document.createElement('span');
-    span.className = 'easyedit-typing-cursor';
+    span.className = 'easyedit-loading-spinner';
+    span.textContent = ' Generating...';
     return span;
   }
 
@@ -33,17 +35,20 @@ const diffDecorations = StateField.define<DecorationSet>({
     const decorations: Array<Range<Decoration>> = [];
     const doc = tr.state.doc;
 
-    // Streaming decorations
-    if (state.streaming && state.fromPos < state.toPos) {
-      const fromLine = doc.lineAt(state.fromPos);
-      const toLine = doc.lineAt(Math.min(state.toPos, doc.length));
+    // Loading decorations -- original text stays visible with subtle highlight
+    if (state.streaming && state.fromPos <= state.toPos) {
+      const clampedFrom = Math.min(state.fromPos, doc.length);
+      const clampedTo = Math.min(state.toPos, doc.length);
+      const fromLine = doc.lineAt(clampedFrom);
+      const toLine = doc.lineAt(clampedTo);
       for (let i = fromLine.number; i <= toLine.number; i++) {
         const line = doc.line(i);
-        decorations.push(Decoration.line({ class: 'easyedit-streaming' }).range(line.from));
+        decorations.push(Decoration.line({ class: 'easyedit-loading' }).range(line.from));
       }
+      // Add loading spinner widget at the end of the last line
       decorations.push(
-        Decoration.widget({ widget: new TypingCursorWidget(), side: 1 })
-          .range(Math.min(state.toPos, doc.length))
+        Decoration.widget({ widget: new LoadingSpinnerWidget(), side: 1 })
+          .range(clampedTo)
       );
     }
 

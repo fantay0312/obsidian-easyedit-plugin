@@ -4,8 +4,8 @@ import { Notice } from 'obsidian';
 import type EasyEditPlugin from '../main';
 import { streamChat, buildEditMessages, buildGenerateMessages, buildPolishMessages } from './ai-service';
 import {
-  diffStateField, startStreamingEffect, appendStreamChunkEffect,
-  finishStreamingEffect, applyDiffEffect, clearDiffEffect,
+  diffStateField, startStreamingEffect,
+  applyDiffEffect, clearDiffEffect, clearDiffAction,
   computeLineDiff, easyEditTransaction, getMergedText,
   hasActionableDiff, isEasyEditTransaction,
 } from './diff-state';
@@ -216,8 +216,8 @@ const externalEditGuard = ViewPlugin.fromClass(class {
     setTimeout(() => {
       const currentDiffState = update.view.state.field(diffStateField);
       if (currentDiffState.active || currentDiffState.streaming) {
-        dispatchEasyEdit(update.view, {
-          effects: clearDiffEffect.of(undefined),
+        update.view.dispatch({
+          annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
         });
       }
       new Notice('EasyEdit: stopped due to external edit.');
@@ -233,18 +233,20 @@ async function runAIRequest(
   originalText: string,
   from: number,
   to: number,
-  replaceSelection: boolean,
+  _replaceSelection: boolean,
   abortController: AbortController,
 ): Promise<void> {
   activeAbortController = abortController;
   activeEditorView = view;
 
+  // Start streaming -- NO document changes, original text stays visible
+  // The streaming state triggers loading decorations on the selected range
   dispatchEasyEdit(view, {
     effects: startStreamingEffect.of({ from, to, originalText }),
-    changes: replaceSelection ? { from, to, insert: '' } : undefined,
   });
 
   try {
+    // Buffer the full AI response -- no document changes during generation
     let fullText = '';
     for await (const chunk of streamChat(
       plugin.settings.apiEndpoint,
@@ -257,32 +259,25 @@ async function runAIRequest(
       if (!currentState.streaming) return;
 
       fullText += chunk;
-      dispatchEasyEdit(view, {
-        effects: appendStreamChunkEffect.of(chunk),
-        changes: { from: currentState.toPos, insert: chunk },
-      });
     }
 
+    // Streaming finished -- check state is still valid
     const streamingState = view.state.field(diffStateField);
     if (!streamingState.streaming) return;
 
-    dispatchEasyEdit(view, {
-      effects: finishStreamingEffect.of(undefined),
-    });
-
+    // Compute diff between original and AI response
     const diff = computeLineDiff(originalText, fullText);
     if (!hasActionableDiff(diff)) {
-      dispatchEasyEdit(view, {
-        effects: clearDiffEffect.of(undefined),
+      // No meaningful changes -- just clear the loading state
+      view.dispatch({
+        annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
       });
       return;
     }
 
+    // Replace original text with merged diff text in one dispatch
     const mergedText = getMergedText(diff);
     const currentState = view.state.field(diffStateField);
-    if (!currentState.fromPos && !currentState.toPos && !currentState.originalText && !currentState.newText) {
-      return;
-    }
 
     dispatchEasyEdit(view, {
       effects: applyDiffEffect.of({
@@ -297,15 +292,11 @@ async function runAIRequest(
       },
     });
   } catch (err: unknown) {
+    // On error, just clear the state -- original text is still in the document
     const currentState = view.state.field(diffStateField);
     if (currentState.active || currentState.streaming) {
-      dispatchEasyEdit(view, {
-        effects: clearDiffEffect.of(undefined),
-        changes: {
-          from: currentState.fromPos,
-          to: currentState.toPos,
-          insert: originalText,
-        },
+      view.dispatch({
+        annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
       });
     }
 

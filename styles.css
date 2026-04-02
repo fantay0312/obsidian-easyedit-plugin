@@ -232,24 +232,54 @@
 }
 
 /* =============================================
-   STREAMING
+   LOADING (during AI generation)
    ============================================= */
-.easyedit-streaming {
-  background: rgba(0, 0, 0, 0.02);
+.easyedit-loading {
+  background: rgba(124, 92, 191, 0.06);
+  animation: easyedit-pulse 2s ease-in-out infinite;
 }
 
-.theme-dark .easyedit-streaming {
-  background: rgba(255, 255, 255, 0.03);
+.theme-dark .easyedit-loading {
+  background: rgba(124, 92, 191, 0.1);
 }
 
-.easyedit-typing-cursor::after {
-  content: '▍';
-  animation: easyedit-blink 1s step-end infinite;
-  color: var(--interactive-accent, #7c5cbf);
+@keyframes easyedit-pulse {
+  0%, 100% { background: rgba(124, 92, 191, 0.06); }
+  50% { background: rgba(124, 92, 191, 0.12); }
 }
 
-@keyframes easyedit-blink {
-  50% { opacity: 0; }
+.theme-dark .easyedit-loading {
+  animation-name: easyedit-pulse-dark;
+}
+
+@keyframes easyedit-pulse-dark {
+  0%, 100% { background: rgba(124, 92, 191, 0.1); }
+  50% { background: rgba(124, 92, 191, 0.2); }
+}
+
+.easyedit-loading-spinner {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.easyedit-loading-spinner::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  border: 2px solid rgba(124, 92, 191, 0.2);
+  border-top-color: var(--interactive-accent, #7c5cbf);
+  border-radius: 50%;
+  animation: easyedit-spin 0.8s linear infinite;
+}
+
+@keyframes easyedit-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* =============================================

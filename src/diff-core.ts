@@ -4,6 +4,7 @@ import { DiffLine, DiffResult } from './types';
 export type DiffLineStatus = 'pending' | 'accepted' | 'rejected';
 
 export const easyEditTransaction = Annotation.define<boolean>();
+export const clearDiffAction = Annotation.define<boolean>();
 
 // ===== Effects =====
 export const startStreamingEffect = StateEffect.define<{
@@ -11,11 +12,8 @@ export const startStreamingEffect = StateEffect.define<{
   to: number;
   originalText: string;
 }>();
-export const appendStreamChunkEffect = StateEffect.define<string>();
 export const finishStreamingEffect = StateEffect.define<void>();
 export const applyDiffEffect = StateEffect.define<DiffResult>();
-export const acceptAllEffect = StateEffect.define<void>();
-export const rejectAllEffect = StateEffect.define<void>();
 export const acceptLineEffect = StateEffect.define<number>();
 export const rejectLineEffect = StateEffect.define<number>();
 export const clearDiffEffect = StateEffect.define<void>();
@@ -47,6 +45,11 @@ const EMPTY_STATE: DiffStateData = {
 export const diffStateField = StateField.define<DiffStateData>({
   create: () => ({ ...EMPTY_STATE }),
   update(state, tr) {
+    // Annotation-based clear -- works reliably from widget event handlers
+    if (tr.annotation(clearDiffAction)) {
+      return { ...EMPTY_STATE };
+    }
+
     let s = { ...state };
 
     for (const e of tr.effects) {
@@ -56,10 +59,8 @@ export const diffStateField = StateField.define<DiffStateData>({
           streaming: true,
           originalText: e.value.originalText,
           fromPos: e.value.from,
-          toPos: e.value.from,
+          toPos: e.value.to,
         };
-      } else if (e.is(appendStreamChunkEffect)) {
-        s = { ...s, newText: s.newText + e.value };
       } else if (e.is(finishStreamingEffect)) {
         s = { ...s, streaming: false };
       } else if (e.is(applyDiffEffect)) {
@@ -72,7 +73,7 @@ export const diffStateField = StateField.define<DiffStateData>({
           newText: e.value.newText,
           lineStatuses: getInitialLineStatuses(e.value.lines),
         };
-      } else if (e.is(acceptAllEffect) || e.is(rejectAllEffect) || e.is(clearDiffEffect)) {
+      } else if (e.is(clearDiffEffect)) {
         s = { ...EMPTY_STATE };
       } else if (e.is(acceptLineEffect)) {
         const statuses = [...s.lineStatuses];

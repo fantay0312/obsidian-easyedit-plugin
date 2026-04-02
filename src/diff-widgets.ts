@@ -1,30 +1,23 @@
 import { EditorView, WidgetType } from '@codemirror/view';
 import {
-  diffStateField, acceptAllEffect, rejectAllEffect,
-  acceptLineEffect, rejectLineEffect, clearDiffEffect,
+  diffStateField, clearDiffAction,
+  acceptLineEffect, rejectLineEffect,
   easyEditTransaction, getAcceptedText, getFinalText, hasPendingLineDecisions,
 } from './diff-core';
 import { DiffLineType } from './types';
 
 /**
- * Two-step dispatch: first replace text, then clear state.
- * This avoids the issue where effects+changes in a single transaction
- * don't work (possibly due to esbuild bundling duplicating the effect identity).
+ * Single dispatch: replace text and clear state via annotation in one transaction.
+ * Using clearDiffAction annotation instead of StateEffect for reliable state clearing
+ * from widget event handlers (effects can fail due to identity mismatch in bundles).
  */
 function acceptAll(view: EditorView): void {
   const s = view.state.field(diffStateField);
   if (!s.active) return;
 
-  // Step 1: replace merged text with accepted text
   view.dispatch({
-    annotations: easyEditTransaction.of(true),
+    annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
     changes: { from: s.fromPos, to: s.toPos, insert: getAcceptedText(s.diffLines) },
-  });
-
-  // Step 2: clear diff state
-  view.dispatch({
-    annotations: easyEditTransaction.of(true),
-    effects: clearDiffEffect.of(undefined),
   });
 }
 
@@ -32,16 +25,9 @@ function rejectAll(view: EditorView): void {
   const s = view.state.field(diffStateField);
   if (!s.active) return;
 
-  // Step 1: replace merged text with original text
   view.dispatch({
-    annotations: easyEditTransaction.of(true),
+    annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
     changes: { from: s.fromPos, to: s.toPos, insert: s.originalText },
-  });
-
-  // Step 2: clear diff state
-  view.dispatch({
-    annotations: easyEditTransaction.of(true),
-    effects: clearDiffEffect.of(undefined),
   });
 }
 
@@ -87,12 +73,8 @@ function autoResolve(view: EditorView): void {
 
     const finalText = getFinalText(s.diffLines, s.lineStatuses);
     view.dispatch({
-      annotations: easyEditTransaction.of(true),
+      annotations: [easyEditTransaction.of(true), clearDiffAction.of(true)],
       changes: { from: s.fromPos, to: s.toPos, insert: finalText },
-    });
-    view.dispatch({
-      annotations: easyEditTransaction.of(true),
-      effects: clearDiffEffect.of(undefined),
     });
   }, 0);
 }
