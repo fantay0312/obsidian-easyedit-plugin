@@ -1,5 +1,6 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import type EasyEditPlugin from '../main';
+import { fetchModelList } from './ai-service';
 
 export class EasyEditSettingTab extends PluginSettingTab {
   constructor(app: App, private plugin: EasyEditPlugin) {
@@ -47,7 +48,33 @@ export class EasyEditSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Custom Models')
-      .setDesc('One model per line')
+      .setDesc('One model per line, or auto-fetch from API')
+      .addButton(btn => btn
+        .setButtonText('Fetch Models')
+        .onClick(async () => {
+          const { apiEndpoint, apiKey } = this.plugin.settings;
+          if (!apiEndpoint || !apiKey) {
+            new Notice('Please set API Endpoint and API Key first');
+            return;
+          }
+          try {
+            btn.setButtonText('Fetching...');
+            btn.setDisabled(true);
+            const models = await fetchModelList(apiEndpoint, apiKey);
+            this.plugin.settings.customModels = models;
+            if (!this.plugin.settings.defaultModel && models.length > 0) {
+              this.plugin.settings.defaultModel = models[0];
+            }
+            await this.plugin.saveSettings();
+            new Notice(`Fetched ${models.length} models`);
+            this.display();
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            new Notice(`Fetch failed: ${msg}`);
+            btn.setButtonText('Fetch Models');
+            btn.setDisabled(false);
+          }
+        }))
       .addTextArea(text => text
         .setPlaceholder('gpt-4o\nclaude-3-opus\n...')
         .setValue(this.plugin.settings.customModels.join('\n'))

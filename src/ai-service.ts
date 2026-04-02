@@ -1,5 +1,27 @@
 import { ChatMessage, SSEChunk } from './types';
 
+interface ModelListResponse {
+  data: Array<{ id: string }>;
+}
+
+export async function fetchModelList(
+  endpoint: string,
+  apiKey: string,
+): Promise<string[]> {
+  const url = `${endpoint.replace(/\/+$/, '')}/v1/models`;
+  const response = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${apiKey}` },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('Invalid API key');
+    throw new Error(`Failed to fetch models: ${response.status}`);
+  }
+
+  const data: ModelListResponse = await response.json();
+  return data.data.map(m => m.id).sort();
+}
+
 export async function* streamChat(
   endpoint: string,
   apiKey: string,

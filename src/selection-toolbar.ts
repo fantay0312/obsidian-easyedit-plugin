@@ -105,15 +105,14 @@ const toolbarDebounce = ViewPlugin.fromClass(class {
     if (this.timeout) clearTimeout(this.timeout);
 
     const sel = update.state.selection.main;
-    if (sel.empty) {
-      update.view.dispatch({ effects: hideToolbarEffect.of(undefined) });
-      return;
-    }
+    if (sel.empty) return; // StateField handles hiding via tr.selection check
 
     this.timeout = setTimeout(() => {
+      const currentSel = update.view.state.selection.main;
+      if (currentSel.empty) return;
       if (toolbarCtx?.isDiffActive(update.view)) return;
       update.view.dispatch({
-        effects: showToolbarEffect.of({ pos: Math.min(sel.anchor, sel.head) }),
+        effects: showToolbarEffect.of({ pos: Math.min(currentSel.anchor, currentSel.head) }),
       });
     }, 100);
   }
